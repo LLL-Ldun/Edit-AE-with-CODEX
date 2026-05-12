@@ -259,6 +259,36 @@ AECreateContext.collectPresets = function (folder, records, state, depth) {
   }
 };
 
+AECreateContext.presetSearchPaths = function (settings, environment) {
+  var env = environment || {};
+  var paths = [];
+  var seen = {};
+  function addPath(path) {
+    if (!path) return;
+    var key = String(path).toLowerCase();
+    if (seen[key]) return;
+    seen[key] = true;
+    paths.push(path);
+  }
+  if (settings && settings.presetPaths && typeof settings.presetPaths.length === 'number') {
+    for (var i = 0; i < settings.presetPaths.length; i++) {
+      addPath(settings.presetPaths[i]);
+    }
+  }
+  var userData = env.userData;
+  var myDocuments = env.myDocuments;
+  var appPath = env.appPath;
+
+  if (!userData && typeof Folder !== 'undefined' && Folder.userData) userData = Folder.userData.fsName;
+  if (!myDocuments && typeof Folder !== 'undefined' && Folder.myDocuments) myDocuments = Folder.myDocuments.fsName;
+  if (!appPath && typeof app !== 'undefined' && app.path) appPath = app.path.fsName;
+
+  addPath(userData ? userData + '/Adobe/After Effects' : '');
+  addPath(myDocuments ? myDocuments + '/Adobe/After Effects' : '');
+  addPath(appPath ? appPath + '/Presets' : '');
+  return paths;
+};
+
 AECreateBridge.exportContext = function () {
   try {
     var result = AECreateContext.exportContextData();
@@ -305,10 +335,7 @@ AECreateBridge.addMarker = function (payloadText) {
 AECreateBridge.scanPresets = function () {
   try {
     var settings = AECreateBridge.settings();
-    var paths = settings.presetPaths.slice(0);
-    paths.push(Folder.userData.fsName + '/Adobe/After Effects');
-    var appPresets = new Folder(app.path.fsName + '/Presets');
-    if (appPresets.exists) paths.push(appPresets.fsName);
+    var paths = AECreateContext.presetSearchPaths(settings);
     var records = [];
     var state = {
       seen: {},
@@ -325,13 +352,14 @@ AECreateBridge.scanPresets = function () {
     AECreateBridge.writeText(new File(folder.fsName + '/preset-cache.json'), AECreateJSON.stringify({
       schemaVersion: 1,
       scannedAt: new Date().toString(),
+      searchedPaths: paths,
       errors: state.errors,
       truncated: state.truncated,
       presets: records
     }));
     var message = 'Scanned ' + records.length + ' presets.';
     if (state.truncated) message += ' Scan truncated.';
-    return AECreateBridge.respond({ ok: true, message: message });
+    return AECreateBridge.respond({ ok: true, message: message, searchedPaths: paths });
   } catch (error) {
     return AECreateBridge.respond({ ok: false, error: String(error) });
   }

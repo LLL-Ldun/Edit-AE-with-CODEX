@@ -35,6 +35,7 @@
     i18n.apply(document, state.language);
     requireElement('languageSelect').value = state.language;
     if (!state.pending) setEmptyText('pendingSummary', 'noPendingAction');
+    renderPresetPaths(state.presetPaths || []);
   }
 
   function renderPending(plan) {
@@ -72,6 +73,21 @@
     });
   }
 
+  function renderPresetPaths(paths) {
+    state.presetPaths = paths || [];
+    if (!state.presetPaths.length) {
+      setEmptyText('presetPathList', 'noCustomPresetPaths');
+      return;
+    }
+    setText('presetPathList', text('customPresetPaths') + ':\n' + state.presetPaths.join('\n'));
+  }
+
+  function loadSettings() {
+    bridge.call('getSettings', {}).then(function (result) {
+      if (result.ok && result.settings) renderPresetPaths(result.settings.presetPaths || []);
+    });
+  }
+
   requireElement('refreshContext').addEventListener('click', refreshContext);
   requireElement('languageSelect').addEventListener('change', function () {
     state.language = i18n.normalizeLanguage(this.value);
@@ -86,7 +102,23 @@
   requireElement('openBridge').addEventListener('click', function () { bridge.call('openBridgeFolder', {}); });
   requireElement('scanPresets').addEventListener('click', function () {
     bridge.call('scanPresets', {}).then(function (result) {
+      if (result.ok && result.searchedPaths) {
+        setText('presetStatus', result.message + '\n\n' + text('scannedPresetPaths') + ':\n' + result.searchedPaths.join('\n'));
+      } else {
+        setText('presetStatus', result.ok ? result.message : result.error);
+      }
+    });
+  });
+  requireElement('addPresetPath').addEventListener('click', function () {
+    bridge.call('choosePresetFolder', {}).then(function (result) {
       setText('presetStatus', result.ok ? result.message : result.error);
+      if (result.ok && result.settings) renderPresetPaths(result.settings.presetPaths || []);
+    });
+  });
+  requireElement('clearPresetPaths').addEventListener('click', function () {
+    bridge.call('clearPresetFolders', {}).then(function (result) {
+      setText('presetStatus', result.ok ? result.message : result.error);
+      if (result.ok && result.settings) renderPresetPaths(result.settings.presetPaths || []);
     });
   });
   document.querySelectorAll('[data-marker]').forEach(function (button) {
@@ -111,6 +143,7 @@
   requireElement('openLogs').addEventListener('click', function () { bridge.call('openLogs', {}); });
 
   applyLanguage();
+  loadSettings();
   refreshContext();
   loadPending();
 }());

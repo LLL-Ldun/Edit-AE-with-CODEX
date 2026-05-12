@@ -69,7 +69,12 @@ AECreateBridge.settings = function () {
   try {
     var parsed = AECreateJSON.parse(text);
     if (parsed.bridgeDir) defaults.bridgeDir = parsed.bridgeDir;
-    if (parsed.presetPaths instanceof Array) defaults.presetPaths = parsed.presetPaths;
+    if (parsed.presetPaths && typeof parsed.presetPaths.length === 'number') {
+      defaults.presetPaths = [];
+      for (var i = 0; i < parsed.presetPaths.length; i++) {
+        if (parsed.presetPaths[i]) defaults.presetPaths.push(parsed.presetPaths[i]);
+      }
+    }
     if (parsed.historyLimit > 0) defaults.historyLimit = parsed.historyLimit;
     defaults.showAdvancedLogs = parsed.showAdvancedLogs === true;
   } catch (error) {}
@@ -103,6 +108,47 @@ AECreateBridge.chooseBridgeFolder = function () {
     AECreateBridge.saveSettings(settings);
     AECreateBridge.bridgeFolder();
     return AECreateBridge.respond({ ok: true, message: 'Bridge folder: ' + folder.fsName });
+  } catch (error) {
+    return AECreateBridge.respond({ ok: false, error: String(error) });
+  }
+};
+
+AECreateBridge.getSettings = function () {
+  try {
+    return AECreateBridge.respond({ ok: true, settings: AECreateBridge.settings() });
+  } catch (error) {
+    return AECreateBridge.respond({ ok: false, error: String(error) });
+  }
+};
+
+AECreateBridge.pathExistsInList = function (paths, path) {
+  var key = String(path).toLowerCase();
+  for (var i = 0; i < paths.length; i++) {
+    if (String(paths[i]).toLowerCase() === key) return true;
+  }
+  return false;
+};
+
+AECreateBridge.choosePresetFolder = function () {
+  try {
+    var folder = Folder.selectDialog('Choose AE preset scan folder');
+    if (!folder) return AECreateBridge.respond({ ok: false, error: 'Preset folder selection cancelled.' });
+    var settings = AECreateBridge.settings();
+    if (!settings.presetPaths || typeof settings.presetPaths.length !== 'number') settings.presetPaths = [];
+    if (!AECreateBridge.pathExistsInList(settings.presetPaths, folder.fsName)) settings.presetPaths.push(folder.fsName);
+    AECreateBridge.saveSettings(settings);
+    return AECreateBridge.respond({ ok: true, message: 'Added preset path: ' + folder.fsName, settings: settings });
+  } catch (error) {
+    return AECreateBridge.respond({ ok: false, error: String(error) });
+  }
+};
+
+AECreateBridge.clearPresetFolders = function () {
+  try {
+    var settings = AECreateBridge.settings();
+    settings.presetPaths = [];
+    AECreateBridge.saveSettings(settings);
+    return AECreateBridge.respond({ ok: true, message: 'Cleared custom preset paths.', settings: settings });
   } catch (error) {
     return AECreateBridge.respond({ ok: false, error: String(error) });
   }

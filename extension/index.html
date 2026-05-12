@@ -41,7 +41,12 @@
 
     <section class="section">
       <div class="section-title" data-i18n="libraryTitle">预设库</div>
-      <button id="scanPresets" class="full" data-i18n="scanPresets">扫描预设</button>
+      <div class="button-row">
+        <button id="scanPresets" data-i18n="scanPresets">扫描预设</button>
+        <button id="addPresetPath" data-i18n="addPresetPath">添加预设路径</button>
+      </div>
+      <button id="clearPresetPaths" class="full" data-i18n="clearPresetPaths">清空自定义路径</button>
+      <pre id="presetPathList" class="box" data-i18n="noCustomPresetPaths">暂无自定义预设路径。默认会扫描 Documents/Adobe/After Effects、APPDATA 和 AE 安装 Presets。</pre>
       <pre id="presetStatus" class="box" data-i18n="presetNotScanned">尚未扫描预设缓存。</pre>
     </section>
 

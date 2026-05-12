@@ -9,7 +9,9 @@
 - [ ] Add a `kill_icon` marker from the panel.
 - [ ] Click `Refresh Context`.
 - [ ] Confirm `current-context.json` exists in the bridge folder.
+- [ ] In `Library`, click `Add Preset Path` if your presets live outside the default AE folders.
 - [ ] Click `Scan Presets`.
+- [ ] Confirm the scan result lists the expected preset paths, including `Documents/Adobe/After Effects`.
 - [ ] Confirm `preset-cache.json` exists and includes `.ffx` files.
 - [ ] Add a test `pending-action.json` that applies a harmless preset or changes an existing effect property.
 - [ ] For a safe first apply test, copy `examples/pending-actions/opacity-pulse.json` to `<bridge-folder>/pending-action.json`, then set `target.layerIndex` and `contextFingerprint` to the values shown in `current-context.json`.
