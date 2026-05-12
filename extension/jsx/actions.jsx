@@ -19,19 +19,47 @@ AECreateActions.readPendingPlan = function () {
   return AECreateJSON.parse(AECreateBridge.readText(file));
 };
 
+AECreateActions.hasField = function (object, name) {
+  return object && object.hasOwnProperty && object.hasOwnProperty(name);
+};
+
+AECreateActions.isInteger = function (value) {
+  return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
+};
+
+AECreateActions.isNonNegativeInteger = function (value) {
+  return AECreateActions.isInteger(value) && value >= 0;
+};
+
+AECreateActions.isPositiveInteger = function (value) {
+  return AECreateActions.isInteger(value) && value > 0;
+};
+
 AECreateActions.checkedMap = function (payload) {
   var map = {};
-  if (!payload || !(payload.checked instanceof Array)) return map;
+  if (!payload || !(payload.checked instanceof Array)) AECreateBridge.fail('payload.checked must be an array.');
   for (var i = 0; i < payload.checked.length; i++) {
-    if (payload.checked[i]) map[payload.checked[i].index] = payload.checked[i].checked;
+    var item = payload.checked[i];
+    if (!item || typeof item !== 'object' || item instanceof Array) AECreateBridge.fail('payload.checked[' + i + '] must be an object.');
+    if (!AECreateActions.isNonNegativeInteger(item.index)) AECreateBridge.fail('payload.checked[' + i + '].index must be a non-negative integer.');
+    if (typeof item.checked !== 'boolean') AECreateBridge.fail('payload.checked[' + i + '].checked must be a boolean.');
+    map[item.index] = item.checked;
   }
   return map;
 };
 
 AECreateActions.moduleIsChecked = function (module, checkedMap, index) {
-  if (checkedMap[index] === false) return false;
-  if (checkedMap[index] === true) return true;
-  return !module || module.checked !== false;
+  return checkedMap[index] === true;
+};
+
+AECreateActions.validateTargetLayerIndex = function (pending, comp) {
+  if (!pending.target || !AECreateActions.isPositiveInteger(pending.target.layerIndex)) {
+    return { ok: false, error: 'Pending action target layerIndex must be a positive integer. Requested index: ' + (pending.target ? pending.target.layerIndex : 'missing') + ', comp.numLayers: ' + comp.numLayers + '.' };
+  }
+  if (pending.target.layerIndex > comp.numLayers) {
+    return { ok: false, error: 'Pending action target layerIndex is out of range. Requested index: ' + pending.target.layerIndex + ', comp.numLayers: ' + comp.numLayers + '.' };
+  }
+  return { ok: true };
 };
 
 AECreateBridge.readPendingAction = function () {
@@ -62,7 +90,8 @@ AECreateBridge.applyCheckedModules = function (payloadText) {
     var checkedMap = AECreateActions.checkedMap(payload);
     var comp = AECreateContext.activeComp();
     if (!comp) return AECreateBridge.respond({ ok: false, error: 'No active composition.' });
-    if (!pending.target || !pending.target.layerIndex) return AECreateBridge.respond({ ok: false, error: 'Pending action target layerIndex is missing.' });
+    var targetCheck = AECreateActions.validateTargetLayerIndex(pending, comp);
+    if (!targetCheck.ok) return AECreateBridge.respond(targetCheck);
 
     var layer = comp.layer(pending.target.layerIndex);
     if (!layer) return AECreateBridge.respond({ ok: false, error: 'Target layer not found.' });
@@ -72,15 +101,27 @@ AECreateBridge.applyCheckedModules = function (payloadText) {
     undoOpen = true;
     for (var m = 0; m < pending.modules.length; m++) {
       if (!AECreateActions.moduleIsChecked(pending.modules[m], checkedMap, m)) continue;
-      AECreateActions.applyModule(layer, pending.modules[m]);
+      AECreateActions.applyModule(layer, pending.modules[m], m);
       applied.push(pending.modules[m].title || ('Module ' + (m + 1)));
     }
     app.endUndoGroup();
     undoOpen = false;
 
-    AECreateActions.log('Applied: ' + applied.join(', '));
-    AECreateActions.writeHistory(pending);
-    return AECreateBridge.respond({ ok: true, message: 'Applied modules: ' + applied.join(', ') });
+    var postApplyWarnings = [];
+    try {
+      AECreateActions.log('Applied: ' + applied.join(', '));
+    } catch (logError) {
+      postApplyWarnings.push('Could not write apply log: ' + String(logError));
+    }
+    try {
+      AECreateActions.writeHistory(pending);
+    } catch (historyError) {
+      postApplyWarnings.push('Could not write history: ' + String(historyError));
+    }
+
+    var response = { ok: true, message: 'Applied modules: ' + applied.join(', ') };
+    if (postApplyWarnings.length) response.warning = postApplyWarnings.join(' ');
+    return AECreateBridge.respond(response);
   } catch (error) {
     if (undoOpen) {
       try {
@@ -94,10 +135,23 @@ AECreateBridge.applyCheckedModules = function (payloadText) {
   }
 };
 
-AECreateActions.applyModule = function (layer, module) {
-  if (!module || !(module.actions instanceof Array)) AECreateBridge.fail('Module actions must be an array.');
+AECreateActions.actionContext = function (module, moduleIndex, actionIndex) {
+  var title = module && module.title ? module.title : ('Module ' + (moduleIndex + 1));
+  return 'module ' + title + ' action ' + (actionIndex + 1);
+};
+
+AECreateActions.requirePropertyPath = function (action) {
+  if (!(action.propertyPath instanceof Array) || action.propertyPath.length === 0) AECreateBridge.fail('propertyPath must be a non-empty array.');
+};
+
+AECreateActions.applyModule = function (layer, module, moduleIndex) {
+  if (!module || !(module.actions instanceof Array)) AECreateBridge.fail('module ' + (module && module.title ? module.title : ('Module ' + (moduleIndex + 1))) + ' actions must be an array.');
   for (var i = 0; i < module.actions.length; i++) {
-    AECreateActions.applyAction(layer, module.actions[i]);
+    try {
+      AECreateActions.applyAction(layer, module.actions[i]);
+    } catch (error) {
+      throw new Error(AECreateActions.actionContext(module, moduleIndex, i) + ': ' + String(error));
+    }
   }
 };
 
@@ -147,22 +201,29 @@ AECreateActions.applyPreset = function (layer, action) {
 };
 
 AECreateActions.setProperty = function (layer, action) {
+  AECreateActions.requirePropertyPath(action);
+  if (!AECreateActions.hasField(action, 'value')) AECreateBridge.fail('setProperty requires value.');
   var prop = AECreateActions.findEffectProperty(layer, action.effectMatchName, action.propertyPath);
   prop.setValue(action.value);
 };
 
 AECreateActions.setKeyframes = function (layer, action) {
+  AECreateActions.requirePropertyPath(action);
   var prop = AECreateActions.findEffectProperty(layer, action.effectMatchName, action.propertyPath);
-  if (!(action.keys instanceof Array)) AECreateBridge.fail('setKeyframes requires keys array.');
+  if (!(action.keys instanceof Array) || action.keys.length === 0) AECreateBridge.fail('setKeyframes requires non-empty keys array.');
   for (var k = 0; k < action.keys.length; k++) {
-    if (!action.keys[k]) AECreateBridge.fail('Keyframe entry is missing.');
+    if (!action.keys[k] || typeof action.keys[k] !== 'object' || action.keys[k] instanceof Array) AECreateBridge.fail('setKeyframes key ' + k + ' must be an object.');
+    if (typeof action.keys[k].time !== 'number') AECreateBridge.fail('setKeyframes key ' + k + '.time must be a number.');
+    if (!AECreateActions.hasField(action.keys[k], 'value')) AECreateBridge.fail('setKeyframes key ' + k + ' requires value.');
     prop.setValueAtTime(action.keys[k].time, action.keys[k].value);
   }
 };
 
 AECreateActions.setExpression = function (layer, action) {
+  AECreateActions.requirePropertyPath(action);
+  if (typeof action.expression !== 'string') AECreateBridge.fail('setExpression requires expression string.');
   var prop = AECreateActions.findEffectProperty(layer, action.effectMatchName, action.propertyPath);
-  prop.expression = action.expression || '';
+  prop.expression = action.expression;
   prop.expressionEnabled = true;
 };
 
@@ -178,20 +239,24 @@ AECreateActions.findEffectProperty = function (layer, effectMatchName, propertyP
   if (!effectMatchName) AECreateBridge.fail('Effect matchName is required.');
   if (!(propertyPath instanceof Array) || propertyPath.length === 0) AECreateBridge.fail('propertyPath must be a non-empty array.');
 
-  var effects = layer.property('ADBE Effect Parade');
-  if (!effects) AECreateBridge.fail('Layer does not support effects.');
+  var prop = null;
+  if (effectMatchName === 'ADBE Transform Group') {
+    prop = layer.property('ADBE Transform Group');
+    if (!prop) AECreateBridge.fail('Transform group not found.');
+  } else {
+    var effects = layer.property('ADBE Effect Parade');
+    if (!effects) AECreateBridge.fail('Layer does not support effects.');
 
-  var effect = null;
-  for (var i = 1; i <= effects.numProperties; i++) {
-    var candidate = effects.property(i);
-    if (candidate.matchName === effectMatchName || candidate.name === effectMatchName) {
-      effect = candidate;
-      break;
+    for (var i = 1; i <= effects.numProperties; i++) {
+      var candidate = effects.property(i);
+      if (candidate.matchName === effectMatchName || candidate.name === effectMatchName) {
+        prop = candidate;
+        break;
+      }
     }
+    if (!prop) throw new Error('Effect not found: ' + effectMatchName);
   }
-  if (!effect) throw new Error('Effect not found: ' + effectMatchName);
 
-  var prop = effect;
   for (var p = 0; p < propertyPath.length; p++) {
     prop = prop.property(propertyPath[p]);
     if (!prop) throw new Error('Property not found: ' + propertyPath.join(' > '));
