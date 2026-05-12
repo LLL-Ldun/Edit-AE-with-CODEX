@@ -2,17 +2,21 @@
   var bridge = new window.AECreateBridgeClient();
   var state = { pending: null };
 
-  function $(id) {
-    return document.getElementById(id);
+  function requireElement(id) {
+    var element = document.getElementById(id);
+    if (!element) {
+      throw new Error('Missing panel element: ' + id);
+    }
+    return element;
   }
 
   function setText(id, text) {
-    $(id).textContent = text;
+    requireElement(id).textContent = text;
   }
 
   function renderPending(plan) {
     state.pending = plan;
-    var list = $('moduleList');
+    var list = requireElement('moduleList');
     list.innerHTML = '';
     if (!plan || !plan.modules || !plan.modules.length) {
       setText('pendingSummary', 'No pending action.');
@@ -45,14 +49,14 @@
     });
   }
 
-  $('refreshContext').addEventListener('click', refreshContext);
-  $('chooseBridge').addEventListener('click', function () {
+  requireElement('refreshContext').addEventListener('click', refreshContext);
+  requireElement('chooseBridge').addEventListener('click', function () {
     bridge.call('chooseBridgeFolder', {}).then(function (result) {
       setText('contextStatus', result.ok ? result.message : result.error);
     });
   });
-  $('openBridge').addEventListener('click', function () { bridge.call('openBridgeFolder', {}); });
-  $('scanPresets').addEventListener('click', function () {
+  requireElement('openBridge').addEventListener('click', function () { bridge.call('openBridgeFolder', {}); });
+  requireElement('scanPresets').addEventListener('click', function () {
     bridge.call('scanPresets', {}).then(function (result) {
       setText('presetStatus', result.ok ? result.message : result.error);
     });
@@ -62,11 +66,11 @@
       bridge.call('addMarker', { name: button.getAttribute('data-marker'), target: 'layer' }).then(refreshContext);
     });
   });
-  $('customMarker').addEventListener('click', function () {
+  requireElement('customMarker').addEventListener('click', function () {
     var name = prompt('Marker name', 'custom_effect');
     if (name) bridge.call('addMarker', { name: name, target: 'layer' }).then(refreshContext);
   });
-  $('applyChecked').addEventListener('click', function () {
+  requireElement('applyChecked').addEventListener('click', function () {
     var checked = Array.prototype.map.call(document.querySelectorAll('[data-index]'), function (input) {
       return { index: Number(input.getAttribute('data-index')), checked: input.checked };
     });
@@ -74,9 +78,9 @@
       setText('pendingSummary', result.ok ? result.message : result.error);
     });
   });
-  $('discardPending').addEventListener('click', function () { bridge.call('discardPendingAction', {}).then(loadPending); });
-  $('saveFavorite').addEventListener('click', function () { bridge.call('saveFavorite', {}).then(loadPending); });
-  $('openLogs').addEventListener('click', function () { bridge.call('openLogs', {}); });
+  requireElement('discardPending').addEventListener('click', function () { bridge.call('discardPendingAction', {}).then(loadPending); });
+  requireElement('saveFavorite').addEventListener('click', function () { bridge.call('saveFavorite', {}).then(loadPending); });
+  requireElement('openLogs').addEventListener('click', function () { bridge.call('openLogs', {}); });
 
   refreshContext();
   loadPending();

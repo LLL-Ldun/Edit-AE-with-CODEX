@@ -3,10 +3,45 @@
     this.cs = new CSInterface();
   }
 
+  function escapeScriptString(value) {
+    return String(value)
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")
+      .replace(/\r/g, '\\r')
+      .replace(/\n/g, '\\n');
+  }
+
+  function buildScript(functionName, payloadText) {
+    var escapedFunctionName = escapeScriptString(functionName);
+    var escapedPayload = escapeScriptString(payloadText);
+    return [
+      '(function () {',
+      '  function jsonError(message) {',
+      '    return \'{"ok":false,"error":"\' + String(message)',
+      '      .replace(/\\\\/g, \'\\\\\\\\\')',
+      '      .replace(/"/g, \'\\\\"\')',
+      '      .replace(/\\r/g, \'\\\\r\')',
+      '      .replace(/\\n/g, \'\\\\n\') + \'"}\';',
+      '  }',
+      '  try {',
+      '    var functionName = \'' + escapedFunctionName + '\';',
+      '    if (typeof AECreateBridge === \'undefined\') {',
+      '      return jsonError(\'AECreateBridge is not loaded for \' + functionName);',
+      '    }',
+      '    if (typeof AECreateBridge[functionName] !== \'function\') {',
+      '      return jsonError(\'AECreateBridge.\' + functionName + \' is not a function\');',
+      '    }',
+      '    return AECreateBridge[functionName](\'' + escapedPayload + '\');',
+      '  } catch (error) {',
+      '    return jsonError(\'AECreateBridge.\' + functionName + \' failed: \' + error);',
+      '  }',
+      '}())'
+    ].join('\n');
+  }
+
   BridgeClient.prototype.call = function call(functionName, payload) {
     var serialized = JSON.stringify(payload || {});
-    var escaped = serialized.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-    var script = 'AECreateBridge.' + functionName + "('" + escaped + "')";
+    var script = buildScript(functionName, serialized);
     return new Promise(function (resolve) {
       this.cs.evalScript(script, function (raw) {
         try {
