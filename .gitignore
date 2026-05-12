@@ -19,6 +19,9 @@ ae-codex-bridge/
 # Local development worktrees
 .worktrees/
 
+# Private local project notes.
+docs/private-*.md
+
 # OS/editor noise
 .DS_Store
 Thumbs.db
