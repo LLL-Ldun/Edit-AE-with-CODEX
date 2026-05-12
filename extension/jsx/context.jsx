@@ -162,6 +162,8 @@ AECreateContext.export = function () {
     },
     selectedLayers: selected,
     compMarkers: AECreateContext.markerList(comp.markerProperty),
+    availableEffects: [],
+    presetCachePath: 'preset-cache.json',
     panelSettings: AECreateBridge.settings()
   };
   return { ok: true, context: context };
