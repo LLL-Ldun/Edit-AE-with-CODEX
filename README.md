@@ -25,6 +25,8 @@ Restart After Effects, then open:
 npm test
 ```
 
+If the current shell cannot find npm, run `node --test` directly.
+
 ## Design
 
 - `docs/superpowers/specs/2026-05-12-ae-codex-effect-bridge-design.md`

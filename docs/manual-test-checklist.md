@@ -3,7 +3,7 @@
 - [ ] Run `powershell -ExecutionPolicy Bypass -File scripts/install-dev.ps1`.
 - [ ] Restart After Effects 2025.
 - [ ] Open `Window > Extensions > AEcreate Codex Bridge`.
-- [ ] Choose a bridge folder outside video/material folders.
+- [ ] Choose a bridge folder outside material, project, and render folders.
 - [ ] Open a test composition.
 - [ ] Select one layer.
 - [ ] Add a `kill_icon` marker from the panel.

@@ -6,6 +6,9 @@ $targetRoot = Join-Path $env:APPDATA "Adobe\CEP\extensions"
 $target = Join-Path $targetRoot "com.aecreate.codexbridge"
 
 New-Item -ItemType Directory -Force -Path $targetRoot | Out-Null
+if (-not (Test-Path -LiteralPath $source -PathType Container)) {
+  throw "Missing extension source folder: $source"
+}
 if (Test-Path $target) {
   Remove-Item -LiteralPath $target -Recurse -Force
 }
