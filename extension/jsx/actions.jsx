@@ -35,6 +35,99 @@ AECreateActions.isPositiveInteger = function (value) {
   return AECreateActions.isInteger(value) && value > 0;
 };
 
+AECreateActions.allowedActionTypes = [
+  'addEffect',
+  'modifyEffect',
+  'applyPreset',
+  'setProperty',
+  'setKeyframes',
+  'setExpression'
+];
+
+AECreateActions.isNonEmptyString = function (value) {
+  return typeof value === 'string' && value.replace(/^\s+|\s+$/g, '').length > 0;
+};
+
+AECreateActions.isAllowedActionType = function (type) {
+  for (var i = 0; i < AECreateActions.allowedActionTypes.length; i++) {
+    if (AECreateActions.allowedActionTypes[i] === type) return true;
+  }
+  return false;
+};
+
+AECreateActions.currentContextFingerprint = function () {
+  var file = new File(AECreateBridge.bridgeFolder().fsName + '/current-context.json');
+  if (!file.exists) AECreateBridge.fail('current-context.json is missing. Click Refresh Context before applying pending actions.');
+  var context = AECreateJSON.parse(AECreateBridge.readText(file));
+  if (!context || !AECreateActions.isNonEmptyString(context.contextFingerprint)) {
+    AECreateBridge.fail('current-context.json has no contextFingerprint. Click Refresh Context again before applying pending actions.');
+  }
+  return context.contextFingerprint;
+};
+
+AECreateActions.validatePendingAction = function (pending, expectedContextFingerprint) {
+  var errors = [];
+  if (!pending || typeof pending !== 'object' || pending instanceof Array) return ['pending action must be an object'];
+
+  if (pending.schemaVersion !== 1) errors.push('schemaVersion must be 1');
+  if (!AECreateActions.isNonEmptyString(pending.createdAt)) errors.push('createdAt must be a non-empty string');
+  if (!AECreateActions.isNonEmptyString(pending.contextFingerprint)) errors.push('contextFingerprint must be a non-empty string');
+  if (AECreateActions.isNonEmptyString(expectedContextFingerprint) && pending.contextFingerprint !== expectedContextFingerprint) {
+    errors.push('contextFingerprint does not match current context');
+  }
+  if (!AECreateActions.isNonEmptyString(pending.title)) errors.push('title must be a non-empty string');
+  if (!AECreateActions.isNonEmptyString(pending.summary)) errors.push('summary must be a non-empty string');
+
+  if (!pending.target || typeof pending.target !== 'object' || pending.target instanceof Array) {
+    errors.push('target must be an object');
+  } else {
+    if (pending.target.compId !== 'active' && !AECreateActions.isNonEmptyString(pending.target.compId)) {
+      errors.push('target.compId must be active or a non-empty string');
+    }
+    if (!AECreateActions.isPositiveInteger(pending.target.layerIndex)) {
+      errors.push('target.layerIndex must be a positive integer');
+    }
+  }
+
+  if (!(pending.modules instanceof Array) || pending.modules.length === 0) {
+    errors.push('modules must be a non-empty array');
+  } else {
+    for (var m = 0; m < pending.modules.length; m++) {
+      var module = pending.modules[m];
+      if (!module || typeof module !== 'object' || module instanceof Array) {
+        errors.push('modules[' + m + '] must be an object');
+        continue;
+      }
+      if (!AECreateActions.isNonEmptyString(module.id)) errors.push('modules[' + m + '].id must be a non-empty string');
+      if (!AECreateActions.isNonEmptyString(module.title)) errors.push('modules[' + m + '].title must be a non-empty string');
+      if (!AECreateActions.isNonEmptyString(module.summary)) errors.push('modules[' + m + '].summary must be a non-empty string');
+      if (!(module.actions instanceof Array) || module.actions.length === 0) {
+        errors.push('modules[' + m + '].actions must be a non-empty array');
+      } else {
+        for (var a = 0; a < module.actions.length; a++) {
+          var action = module.actions[a];
+          if (!action || typeof action !== 'object' || action instanceof Array) {
+            errors.push('modules[' + m + '].actions[' + a + '] must be an object');
+            continue;
+          }
+          if (!AECreateActions.isNonEmptyString(action.type)) {
+            errors.push('modules[' + m + '].actions[' + a + '].type must be a non-empty string');
+          } else if (!AECreateActions.isAllowedActionType(action.type)) {
+            errors.push('modules[' + m + '].actions[' + a + '].type must be one of: ' + AECreateActions.allowedActionTypes.join(', '));
+          }
+        }
+      }
+    }
+  }
+
+  return errors;
+};
+
+AECreateActions.validatePendingActionOrFail = function (pending, expectedContextFingerprint) {
+  var errors = AECreateActions.validatePendingAction(pending, expectedContextFingerprint);
+  if (errors.length) AECreateBridge.fail('Pending action failed validation: ' + errors.join('; '));
+};
+
 AECreateActions.checkedMap = function (payload) {
   var map = {};
   if (!payload || !(payload.checked instanceof Array)) AECreateBridge.fail('payload.checked must be an array.');
@@ -84,10 +177,11 @@ AECreateBridge.applyCheckedModules = function (payloadText) {
   var undoOpen = false;
   try {
     var payload = AECreateJSON.parse(payloadText || '{}');
-    var pending = AECreateActions.readPendingPlan();
-    if (!pending.modules || !(pending.modules instanceof Array)) AECreateBridge.fail('Pending action modules must be an array.');
-
     var checkedMap = AECreateActions.checkedMap(payload);
+    var pending = AECreateActions.readPendingPlan();
+    var expectedContextFingerprint = AECreateActions.currentContextFingerprint();
+    AECreateActions.validatePendingActionOrFail(pending, expectedContextFingerprint);
+
     var comp = AECreateContext.activeComp();
     if (!comp) return AECreateBridge.respond({ ok: false, error: 'No active composition.' });
     var targetCheck = AECreateActions.validateTargetLayerIndex(pending, comp);

@@ -36,6 +36,48 @@ AECreateContext.safeValue = function (value, depth) {
   return String(value);
 };
 
+AECreateContext.isVolatileFingerprintField = function (key) {
+  return key === 'exportedAt' || key === 'panelSettings' || key === 'contextFingerprint';
+};
+
+AECreateContext.stableStringify = function (value) {
+  if (value === null || value === undefined) return 'null';
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'string') return AECreateJSON.stringify(value);
+  if (value instanceof Array) {
+    var items = [];
+    for (var i = 0; i < value.length; i++) items.push(AECreateContext.stableStringify(value[i]));
+    return '[' + items.join(',') + ']';
+  }
+
+  var keys = [];
+  for (var key in value) {
+    if (value.hasOwnProperty(key) && !AECreateContext.isVolatileFingerprintField(key)) keys.push(key);
+  }
+  keys.sort();
+
+  var props = [];
+  for (var j = 0; j < keys.length; j++) {
+    props.push(AECreateJSON.stringify(keys[j]) + ':' + AECreateContext.stableStringify(value[keys[j]]));
+  }
+  return '{' + props.join(',') + '}';
+};
+
+AECreateContext.hashString = function (text) {
+  var hash = 2166136261;
+  for (var i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+    hash = hash >>> 0;
+  }
+  var output = hash.toString(16);
+  while (output.length < 8) output = '0' + output;
+  return 'fnv1a32:' + output;
+};
+
+AECreateContext.fingerprintContext = function (context) {
+  return AECreateContext.hashString(AECreateContext.stableStringify(context));
+};
+
 AECreateContext.markerList = function (markerProperty) {
   var output = [];
   if (!markerProperty) return output;
@@ -166,6 +208,7 @@ AECreateContext.exportContextData = function () {
     presetCachePath: 'preset-cache.json',
     panelSettings: AECreateBridge.settings()
   };
+  context.contextFingerprint = AECreateContext.fingerprintContext(context);
   return { ok: true, context: context };
 };
 

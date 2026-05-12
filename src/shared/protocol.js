@@ -13,12 +13,7 @@ const allowedActionTypes = [
   'applyPreset',
   'setProperty',
   'setKeyframes',
-  'setExpression',
-  'addAdjustmentLayer',
-  'addMarker',
-  'renameLayer',
-  'setBlendMode',
-  'setOpacity'
+  'setExpression'
 ];
 
 function normalizeSettings(input) {
@@ -104,7 +99,7 @@ function stripVolatileFields(value) {
   if (!value || typeof value !== 'object') return value;
   const output = {};
   Object.keys(value).sort().forEach((key) => {
-    if (key === 'exportedAt' || key === 'panelSettings') return;
+    if (key === 'exportedAt' || key === 'panelSettings' || key === 'contextFingerprint') return;
     output[key] = stripVolatileFields(value[key]);
   });
   return output;

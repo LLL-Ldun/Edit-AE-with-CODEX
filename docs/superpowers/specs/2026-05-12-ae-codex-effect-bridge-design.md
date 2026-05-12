@@ -194,6 +194,7 @@ Required top-level fields:
   "compMarkers": [],
   "availableEffects": [],
   "presetCachePath": "preset-cache.json",
+  "contextFingerprint": "fingerprint-of-current-context",
   "panelSettings": {}
 }
 ```
@@ -279,6 +280,9 @@ Supported action types:
 - `setProperty`
 - `setKeyframes`
 - `setExpression`
+
+Later structured action candidates:
+
 - `addAdjustmentLayer`
 - `addMarker`
 - `renameLayer`

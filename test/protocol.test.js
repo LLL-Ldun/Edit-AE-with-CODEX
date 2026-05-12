@@ -90,21 +90,23 @@ test('validatePendingAction reports unsupported action type', () => {
 
   assert.ok(
     validatePendingAction(action).includes(
-      'modules[0].actions[0].type must be one of: addEffect, modifyEffect, applyPreset, setProperty, setKeyframes, setExpression, addAdjustmentLayer, addMarker, renameLayer, setBlendMode, setOpacity'
+      'modules[0].actions[0].type must be one of: addEffect, modifyEffect, applyPreset, setProperty, setKeyframes, setExpression'
     )
   );
 });
 
-test('fingerprintContext ignores exportedAt but changes on layer effects', () => {
+test('fingerprintContext ignores exportedAt and contextFingerprint but changes on layer effects', () => {
   const a = {
     schemaVersion: 1,
     exportedAt: 'one',
+    contextFingerprint: 'old',
     activeComp: { name: 'Comp' },
     selectedLayers: [{ index: 1, name: 'Layer', effects: [{ matchName: 'Glow' }] }]
   };
   const b = {
     schemaVersion: 1,
     exportedAt: 'two',
+    contextFingerprint: 'new',
     activeComp: { name: 'Comp' },
     selectedLayers: [{ index: 1, name: 'Layer', effects: [{ matchName: 'Glow' }] }]
   };
