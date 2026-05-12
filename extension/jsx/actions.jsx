@@ -55,6 +55,11 @@ AECreateActions.isAllowedActionType = function (type) {
   return false;
 };
 
+AECreateActions.activeComp = function () {
+  if (!app.project || !app.project.activeItem || !(app.project.activeItem instanceof CompItem)) return null;
+  return app.project.activeItem;
+};
+
 AECreateActions.currentContextFingerprint = function () {
   var file = new File(AECreateBridge.bridgeFolder().fsName + '/current-context.json');
   if (!file.exists) AECreateBridge.fail('current-context.json is missing. Click Refresh Context before applying pending actions.');
@@ -182,7 +187,7 @@ AECreateBridge.applyCheckedModules = function (payloadText) {
     var expectedContextFingerprint = AECreateActions.currentContextFingerprint();
     AECreateActions.validatePendingActionOrFail(pending, expectedContextFingerprint);
 
-    var comp = AECreateContext.activeComp();
+    var comp = AECreateActions.activeComp();
     if (!comp) return AECreateBridge.respond({ ok: false, error: 'No active composition.' });
     var targetCheck = AECreateActions.validateTargetLayerIndex(pending, comp);
     if (!targetCheck.ok) return AECreateBridge.respond(targetCheck);
