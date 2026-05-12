@@ -7,6 +7,20 @@ const defaultSettings = {
   showAdvancedLogs: false
 };
 
+const allowedActionTypes = [
+  'addEffect',
+  'modifyEffect',
+  'applyPreset',
+  'setProperty',
+  'setKeyframes',
+  'setExpression',
+  'addAdjustmentLayer',
+  'addMarker',
+  'renameLayer',
+  'setBlendMode',
+  'setOpacity'
+];
+
 function normalizeSettings(input) {
   const source = input && typeof input === 'object' ? input : {};
   return {
@@ -68,6 +82,10 @@ function validatePendingAction(action, options = {}) {
           }
           if (!nonEmptyString(moduleAction.type)) {
             errors.push(`modules[${index}].actions[${actionIndex}].type must be a non-empty string`);
+          } else if (!allowedActionTypes.includes(moduleAction.type)) {
+            errors.push(
+              `modules[${index}].actions[${actionIndex}].type must be one of: ${allowedActionTypes.join(', ')}`
+            );
           }
         });
       }

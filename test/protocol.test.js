@@ -77,6 +77,24 @@ test('validatePendingAction reports malformed action items', () => {
   assert.ok(errors.includes('modules[0].actions[1].type must be a non-empty string'));
 });
 
+test('validatePendingAction reports unsupported action type', () => {
+  const action = createValidPendingAction({
+    modules: [{
+      id: 'm1',
+      title: 'Unsupported',
+      summary: 'Uses an unsupported action type.',
+      checked: true,
+      actions: [{ type: 'notSupported' }]
+    }]
+  });
+
+  assert.ok(
+    validatePendingAction(action).includes(
+      'modules[0].actions[0].type must be one of: addEffect, modifyEffect, applyPreset, setProperty, setKeyframes, setExpression, addAdjustmentLayer, addMarker, renameLayer, setBlendMode, setOpacity'
+    )
+  );
+});
+
 test('fingerprintContext ignores exportedAt but changes on layer effects', () => {
   const a = {
     schemaVersion: 1,
