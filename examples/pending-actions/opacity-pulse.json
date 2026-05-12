@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-05-12T12:30:00+08:00",
+  "contextFingerprint": "replace-with-current-context-fingerprint",
+  "title": "Opacity Pulse Test",
+  "summary": "Creates a short opacity pulse on the selected target layer.",
+  "target": {
+    "compId": "active",
+    "layerIndex": 1,
+    "layerName": "Selected Layer"
+  },
+  "modules": [
+    {
+      "id": "opacity-pulse",
+      "title": "Opacity Pulse",
+      "summary": "Sets opacity keyframes at 0s, 0.1s, and 0.2s for a harmless apply test.",
+      "checked": true,
+      "actions": [
+        {
+          "type": "setKeyframes",
+          "effectMatchName": "ADBE Transform Group",
+          "propertyPath": ["ADBE Opacity"],
+          "keys": [
+            { "time": 0, "value": 100 },
+            { "time": 0.1, "value": 35 },
+            { "time": 0.2, "value": 100 }
+          ]
+        }
+      ]
+    }
+  ]
+}

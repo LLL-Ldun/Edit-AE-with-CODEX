@@ -1,9 +1,37 @@
 # AEcreate
 
-AEcreate is a dockable After Effects extension project for natural-language effect control through Codex.
+AEcreate is a dockable After Effects CEP panel for Codex-driven effect control.
 
-The first version is designed as a CEP panel with a user-selected local bridge folder. AE exports selected-layer context, markers, installed effects, existing effect parameters, and presets; Codex reads that context and writes back a checkable effect plan for the panel to apply inside AE.
+V1 uses a local bridge folder:
 
-See the design spec:
+1. AE exports selected-layer context, markers, existing effects, and preset metadata.
+2. Codex reads that context and writes `pending-action.json`.
+3. The AE panel displays checkable modules.
+4. The user applies checked modules inside AE.
+
+## Install For Development
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/install-dev.ps1
+```
+
+Restart After Effects, then open:
+
+`Window > Extensions > AEcreate Codex Bridge`
+
+## Test
+
+```powershell
+npm test
+```
+
+If the current shell cannot find npm, run `node --test` directly.
+
+## Design
 
 - `docs/superpowers/specs/2026-05-12-ae-codex-effect-bridge-design.md`
+- `docs/superpowers/plans/2026-05-12-ae-codex-effect-bridge-implementation.md`
+
+## Safety
+
+Keep project media, AE project files, renders, and bridge runtime data outside this repo. The `.gitignore` excludes common media, AE project, and bridge-output files.

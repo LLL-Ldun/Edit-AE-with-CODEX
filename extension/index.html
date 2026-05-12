@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>AEcreate Codex Bridge</title>
+  <link rel="stylesheet" href="./css/panel.css">
+</head>
+<body>
+  <main class="panel">
+    <section class="section">
+      <div class="section-title">Context</div>
+      <div id="contextStatus" class="status">No context exported.</div>
+      <div class="button-row">
+        <button id="refreshContext">Refresh Context</button>
+        <button id="chooseBridge">Choose Bridge</button>
+      </div>
+      <button id="openBridge" class="full">Open Bridge Folder</button>
+    </section>
+
+    <section class="section">
+      <div class="section-title">Markers</div>
+      <div class="button-grid">
+        <button data-marker="kill_icon">Kill</button>
+        <button data-marker="impact">Impact</button>
+        <button data-marker="rewind">Rewind</button>
+        <button id="customMarker">Custom</button>
+      </div>
+      <pre id="markerList" class="box">No markers loaded.</pre>
+    </section>
+
+    <section class="section">
+      <div class="section-title">Library</div>
+      <button id="scanPresets" class="full">Scan Presets</button>
+      <pre id="presetStatus" class="box">Preset cache not scanned.</pre>
+    </section>
+
+    <section class="section">
+      <div class="section-title">Pending Plan</div>
+      <div id="pendingSummary" class="status">No pending action.</div>
+      <div id="moduleList" class="module-list"></div>
+      <div class="button-row">
+        <button id="applyChecked">Apply Checked</button>
+        <button id="discardPending">Discard</button>
+      </div>
+      <div class="button-row">
+        <button id="saveFavorite">Save Favorite</button>
+        <button id="openLogs">Open Logs</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="./js/lib/CSInterface.js"></script>
+  <script src="./js/bridge-client.js"></script>
+  <script src="./js/panel.js"></script>
+</body>
+</html>

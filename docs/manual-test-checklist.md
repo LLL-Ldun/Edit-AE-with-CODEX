@@ -1,0 +1,21 @@
+# Manual AE Test Checklist
+
+- [ ] Run `powershell -ExecutionPolicy Bypass -File scripts/install-dev.ps1`.
+- [ ] Restart After Effects 2025.
+- [ ] Open `Window > Extensions > AEcreate Codex Bridge`.
+- [ ] Choose a bridge folder outside material, project, and render folders.
+- [ ] Open a test composition.
+- [ ] Select one layer.
+- [ ] Add a `kill_icon` marker from the panel.
+- [ ] Click `Refresh Context`.
+- [ ] Confirm `current-context.json` exists in the bridge folder.
+- [ ] Click `Scan Presets`.
+- [ ] Confirm `preset-cache.json` exists and includes `.ffx` files.
+- [ ] Add a test `pending-action.json` that applies a harmless preset or changes an existing effect property.
+- [ ] For a safe first apply test, copy `examples/pending-actions/opacity-pulse.json` to `<bridge-folder>/pending-action.json`, then set `target.layerIndex` and `contextFingerprint` to the values shown in `current-context.json`.
+- [ ] Confirm the pending plan appears with module checkboxes.
+- [ ] Apply one checked module.
+- [ ] Confirm the effect appears or updates on the selected layer.
+- [ ] Press Ctrl+Z once in AE and confirm the full applied module reverts.
+- [ ] Save the pending plan as a favorite.
+- [ ] Confirm logs are written in the bridge folder.

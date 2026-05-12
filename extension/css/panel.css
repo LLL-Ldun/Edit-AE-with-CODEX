@@ -1,0 +1,87 @@
+body {
+  margin: 0;
+  background: #1f1f1f;
+  color: #f0f0f0;
+  font-family: Arial, "Microsoft YaHei", sans-serif;
+  font-size: 12px;
+}
+
+.panel {
+  padding: 12px;
+}
+
+.section {
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #282828;
+}
+
+.section-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.status,
+.box {
+  background: #171717;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 8px;
+  white-space: pre-wrap;
+}
+
+.button-row,
+.button-grid {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.button-row {
+  grid-template-columns: 1fr 1fr;
+}
+
+.button-grid {
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+
+button {
+  background: #3d6fb6;
+  color: white;
+  border: 0;
+  border-radius: 4px;
+  padding: 8px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #4d7fc6;
+}
+
+button.full {
+  width: 100%;
+}
+
+.module {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 8px;
+  margin-bottom: 6px;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  background: #202020;
+}
+
+.module-title {
+  font-weight: 700;
+}
+
+.module-summary {
+  color: #c8c8c8;
+  margin-top: 3px;
+}

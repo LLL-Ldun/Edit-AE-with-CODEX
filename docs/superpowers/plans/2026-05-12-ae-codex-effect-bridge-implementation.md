@@ -644,7 +644,7 @@ AECreateJSON.stringify = function (value) {
 
 AECreateJSON.parse = function (text) {
   if (typeof JSON !== 'undefined' && JSON.parse) return JSON.parse(text);
-  return eval('(' + text + ')');
+  return AECreateJSON.strictParse(text);
 };
 ```
 
@@ -1226,7 +1226,7 @@ Create `examples/pending-actions/opacity-pulse.json`:
 {
   "schemaVersion": 1,
   "createdAt": "2026-05-12T12:30:00+08:00",
-  "contextFingerprint": "manual-test",
+  "contextFingerprint": "replace-with-current-context-fingerprint",
   "title": "Opacity Pulse Test",
   "summary": "Creates a short opacity pulse on the selected target layer.",
   "target": {
@@ -1292,7 +1292,7 @@ AECreateActions.findEffectProperty = function (layer, effectMatchName, propertyP
 Add this line after the `pending-action.json` checklist item:
 
 ```md
-- [ ] For a safe first apply test, copy `examples/pending-actions/opacity-pulse.json` to `<bridge-folder>/pending-action.json` and set `target.layerIndex` to the selected layer index shown in `current-context.json`.
+- [ ] For a safe first apply test, copy `examples/pending-actions/opacity-pulse.json` to `<bridge-folder>/pending-action.json`, then set `target.layerIndex` and `contextFingerprint` to the values shown in `current-context.json`.
 ```
 
 - [ ] **Step 4: Commit**
