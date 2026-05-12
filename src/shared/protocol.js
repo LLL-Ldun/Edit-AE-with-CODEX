@@ -23,10 +23,18 @@ function normalizeSettings(input) {
   };
 }
 
-function validatePendingAction(action) {
+function validatePendingAction(action, options = {}) {
   const errors = [];
   if (!action || typeof action !== 'object') return ['pending action must be an object'];
   if (action.schemaVersion !== 1) errors.push('schemaVersion must be 1');
+  if (!nonEmptyString(action.createdAt)) errors.push('createdAt must be a non-empty string');
+  if (!nonEmptyString(action.contextFingerprint)) errors.push('contextFingerprint must be a non-empty string');
+  if (
+    nonEmptyString(options.expectedContextFingerprint) &&
+    action.contextFingerprint !== options.expectedContextFingerprint
+  ) {
+    errors.push('contextFingerprint does not match current context');
+  }
   if (!nonEmptyString(action.title)) errors.push('title must be a non-empty string');
   if (!nonEmptyString(action.summary)) errors.push('summary must be a non-empty string');
   if (!action.target || typeof action.target !== 'object') {
@@ -52,6 +60,16 @@ function validatePendingAction(action) {
       if (!nonEmptyString(module.summary)) errors.push(`modules[${index}].summary must be a non-empty string`);
       if (!Array.isArray(module.actions) || module.actions.length === 0) {
         errors.push(`modules[${index}].actions must be a non-empty array`);
+      } else {
+        module.actions.forEach((moduleAction, actionIndex) => {
+          if (!moduleAction || typeof moduleAction !== 'object' || Array.isArray(moduleAction)) {
+            errors.push(`modules[${index}].actions[${actionIndex}] must be an object`);
+            return;
+          }
+          if (!nonEmptyString(moduleAction.type)) {
+            errors.push(`modules[${index}].actions[${actionIndex}].type must be a non-empty string`);
+          }
+        });
       }
     });
   }
@@ -68,7 +86,7 @@ function stripVolatileFields(value) {
   if (!value || typeof value !== 'object') return value;
   const output = {};
   Object.keys(value).sort().forEach((key) => {
-    if (key === 'exportedAt') return;
+    if (key === 'exportedAt' || key === 'panelSettings') return;
     output[key] = stripVolatileFields(value[key]);
   });
   return output;
