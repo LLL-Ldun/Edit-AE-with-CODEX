@@ -256,10 +256,22 @@ AECreateContext.effectScanOptions = function (options) {
   return {
     maxDepth: options.maxDepth > 0 ? options.maxDepth : 8,
     maxRecords: options.maxRecords > 0 ? options.maxRecords : 12000,
+    includePluginFiles: options.includePluginFiles !== false,
+    maxPluginFileDepth: options.maxPluginFileDepth > 0 ? options.maxPluginFileDepth : 6,
+    maxPluginFileRecords: options.maxPluginFileRecords > 0 ? options.maxPluginFileRecords : 40,
     errors: [],
     count: 0,
     truncated: false
   };
+};
+
+AECreateContext.safeReadNumberFlag = function (record, prop, flagName, valueName, outputFlag, outputValue) {
+  try {
+    if (prop[flagName] === true) {
+      record[outputFlag] = true;
+      record[outputValue] = prop[valueName];
+    }
+  } catch (error) {}
 };
 
 AECreateContext.effectParameterTree = function (group, options, depth, path, matchPath) {
@@ -311,6 +323,11 @@ AECreateContext.effectParameterTree = function (group, options, depth, path, mat
       try {
         if (prop.isTimeVarying !== undefined) record.isTimeVarying = prop.isTimeVarying === true;
       } catch (timeVaryingError) {}
+      AECreateContext.safeReadNumberFlag(record, prop, 'hasMin', 'minValue', 'hasMin', 'minValue');
+      AECreateContext.safeReadNumberFlag(record, prop, 'hasMax', 'maxValue', 'hasMax', 'maxValue');
+      try {
+        if (prop.unitsText) record.unitsText = prop.unitsText;
+      } catch (unitsError) {}
 
       var pathName = name || matchName || String(i);
       var pathMatchName = matchName || name || String(i);
@@ -335,6 +352,151 @@ AECreateContext.effectParameterTree = function (group, options, depth, path, mat
       output.push({ index: i, error: String(propertyError), path: path.concat([String(i)]), matchPath: matchPath.concat([String(i)]) });
     }
   }
+  return output;
+};
+
+AECreateContext.effectIdentityTokens = function (effectInfo) {
+  var text = [
+    effectInfo && effectInfo.name,
+    effectInfo && effectInfo.matchName,
+    effectInfo && effectInfo.category
+  ].join(' ').toLowerCase();
+  var raw = text.split(/[^a-z0-9]+/);
+  var blocked = {
+    a: true,
+    ae: true,
+    adbe: true,
+    and: true,
+    cc: true,
+    effect: true,
+    effects: true,
+    fx: true,
+    plugin: true,
+    plugins: true,
+    rg: true,
+    the: true,
+    tc: true
+  };
+  var tokens = [];
+  for (var i = 0; i < raw.length; i++) {
+    var token = raw[i];
+    if (!token || token.length < 3 || blocked[token]) continue;
+    var seen = false;
+    for (var j = 0; j < tokens.length; j++) {
+      if (tokens[j] === token) {
+        seen = true;
+        break;
+      }
+    }
+    if (!seen) tokens.push(token);
+  }
+  return tokens;
+};
+
+AECreateContext.pluginFileCandidateScore = function (effectInfo, filePath) {
+  var tokens = AECreateContext.effectIdentityTokens(effectInfo);
+  var normalizedPath = String(filePath || '').toLowerCase().replace(/\\/g, '/');
+  var fileName = normalizedPath.split('/').pop();
+  var score = 0;
+  var matched = 0;
+  for (var i = 0; i < tokens.length; i++) {
+    if (fileName.indexOf(tokens[i]) !== -1) {
+      score += 3;
+      matched++;
+    } else if (normalizedPath.indexOf(tokens[i]) !== -1) {
+      score += 1;
+      matched++;
+    }
+  }
+  return matched ? score : 0;
+};
+
+AECreateContext.pluginFileExtensions = {
+  aex: true,
+  plugin: true,
+  dll: true
+};
+
+AECreateContext.pluginFileSearchRoots = function () {
+  var roots = [];
+  function add(path) {
+    if (!path) return;
+    var key = String(path).toLowerCase();
+    for (var i = 0; i < roots.length; i++) {
+      if (String(roots[i]).toLowerCase() === key) return;
+    }
+    roots.push(path);
+  }
+  try {
+    if (Folder.startup) add(Folder.startup.fsName + '/Plug-ins');
+  } catch (startupError) {}
+  try {
+    var programFiles = $.getenv('ProgramFiles') || 'C:/Program Files';
+    var programFilesX86 = $.getenv('ProgramFiles(x86)');
+    var programData = $.getenv('ProgramData') || 'C:/ProgramData';
+    add(programFiles + '/Adobe/Common/Plug-ins');
+    add(programFiles + '/Common Files/Adobe/Plug-Ins');
+    add(programFiles + '/Maxon');
+    add(programData + '/Maxon');
+    if (programFilesX86) {
+      add(programFilesX86 + '/Adobe/Common/Plug-ins');
+      add(programFilesX86 + '/Common Files/Adobe/Plug-Ins');
+    }
+  } catch (envError) {}
+  return roots;
+};
+
+AECreateContext.collectPluginFileCandidatesInFolder = function (folder, effectInfo, options, depth, output) {
+  if (!folder || !folder.exists || depth > options.maxPluginFileDepth || output.length >= options.maxPluginFileRecords) return;
+  var files = [];
+  try {
+    files = folder.getFiles();
+  } catch (error) {
+    return;
+  }
+  for (var i = 0; i < files.length; i++) {
+    if (output.length >= options.maxPluginFileRecords) return;
+    var item = files[i];
+    if (item instanceof Folder) {
+      AECreateContext.collectPluginFileCandidatesInFolder(item, effectInfo, options, depth + 1, output);
+      continue;
+    }
+    if (!(item instanceof File)) continue;
+    var name = String(item.name || '');
+    var extension = name.split('.').pop().toLowerCase();
+    if (!AECreateContext.pluginFileExtensions[extension]) continue;
+    var score = AECreateContext.pluginFileCandidateScore(effectInfo, item.fsName);
+    if (score <= 0) continue;
+    var record = {
+      path: item.fsName,
+      name: item.name,
+      extension: extension,
+      score: score,
+      readableSemantics: false,
+      note: 'Compiled AE plugin binary. Use this as file identity metadata; semantic control still comes from AE parameter scanning, presets, docs, and dynamic probing.'
+    };
+    try {
+      record.size = item.length;
+    } catch (lengthError) {}
+    try {
+      record.modified = item.modified ? item.modified.toString() : '';
+    } catch (modifiedError) {}
+    output.push(record);
+  }
+};
+
+AECreateContext.pluginFileCandidates = function (effectInfo, options) {
+  options = options || AECreateContext.effectScanOptions({});
+  if (!options.includePluginFiles || typeof Folder === 'undefined') return [];
+  var output = [];
+  var roots = AECreateContext.pluginFileSearchRoots();
+  for (var i = 0; i < roots.length; i++) {
+    AECreateContext.collectPluginFileCandidatesInFolder(new Folder(roots[i]), effectInfo, options, 0, output);
+    if (output.length >= options.maxPluginFileRecords) break;
+  }
+  output.sort(function (a, b) {
+    return b.score - a.score;
+  });
   return output;
 };
 
@@ -387,6 +549,7 @@ AECreateContext.scanEffectParametersData = function (effectInfo, options) {
       schemaVersion: 1,
       scannedAt: new Date().toString(),
       effect: effectInfo,
+      pluginFiles: AECreateContext.pluginFileCandidates(effectInfo, scanOptions),
       params: params,
       parameterCount: scanOptions.count,
       truncated: scanOptions.truncated,
@@ -440,6 +603,7 @@ AECreateBridge.listAvailableEffects = function () {
 AECreateBridge.scanAllEffectParams = function (payloadText) {
   try {
     var payload = AECreateJSON.parse(payloadText || '{}');
+    payload.includePluginFiles = payload.includePluginFiles === true;
     var effects = AECreateContext.availableEffectsList();
     var catalogPath = AECreateContext.writeEffectCatalog(effects);
     var report = {

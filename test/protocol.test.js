@@ -4,6 +4,7 @@ const {
   defaultSettings,
   normalizeSettings,
   validatePendingAction,
+  validatePendingActionValueRanges,
   fingerprintContext
 } = require('../src/shared/protocol');
 
@@ -93,6 +94,74 @@ test('validatePendingAction reports unsupported action type', () => {
       'modules[0].actions[0].type must be one of: addEffect, modifyEffect, applyPreset, setProperty, setKeyframes, setExpression'
     )
   );
+});
+
+test('validatePendingActionValueRanges reports out-of-range effect values from scanned params', () => {
+  const action = createValidPendingAction({
+    modules: [{
+      id: 'm1',
+      title: 'Particular Turbulence',
+      summary: 'Sets a turbulence parameter beyond its AE range.',
+      checked: true,
+      actions: [{
+        type: 'setProperty',
+        effectMatchName: 'tc Particular',
+        propertyPath: ['tc Particular-0711'],
+        value: 120
+      }]
+    }]
+  });
+  const effectScan = {
+    effect: { name: 'Trapcode Particular', matchName: 'tc Particular' },
+    params: [{
+      name: '影响位置',
+      matchName: 'tc Particular-0711',
+      matchPath: ['tc Particular-0711'],
+      path: ['影响位置'],
+      hasMin: true,
+      minValue: 0,
+      hasMax: true,
+      maxValue: 100
+    }]
+  };
+
+  assert.deepEqual(validatePendingActionValueRanges(action, [effectScan]), [
+    'modules[0].actions[0] value 120 is above maxValue 100 for tc Particular > tc Particular-0711'
+  ]);
+});
+
+test('validatePendingActionValueRanges checks keyframe values from scanned params', () => {
+  const action = createValidPendingAction({
+    modules: [{
+      id: 'm1',
+      title: 'Particular Turbulence',
+      summary: 'Sets turbulence keyframes.',
+      checked: true,
+      actions: [{
+        type: 'setKeyframes',
+        effectMatchName: 'tc Particular',
+        propertyPath: ['tc Particular-0711'],
+        keys: [{ time: 1, value: 92 }, { time: 2, value: -1 }]
+      }]
+    }]
+  });
+  const effectScan = {
+    effect: { name: 'Trapcode Particular', matchName: 'tc Particular' },
+    params: [{
+      name: '影响位置',
+      matchName: 'tc Particular-0711',
+      matchPath: ['tc Particular-0711'],
+      path: ['影响位置'],
+      hasMin: true,
+      minValue: 0,
+      hasMax: true,
+      maxValue: 100
+    }]
+  };
+
+  assert.deepEqual(validatePendingActionValueRanges(action, [effectScan]), [
+    'modules[0].actions[0].keys[1] value -1 is below minValue 0 for tc Particular > tc Particular-0711'
+  ]);
 });
 
 test('fingerprintContext ignores exportedAt and contextFingerprint but changes on layer effects', () => {

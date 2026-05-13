@@ -71,6 +71,59 @@ test('effectParameterTree records writable metadata and match paths', () => {
   }]));
 });
 
+test('effectParameterTree records AE value ranges when exposed', () => {
+  const helpers = loadContextHelpers();
+  const property = {
+    propertyIndex: 1,
+    name: 'Affect Position',
+    matchName: 'tc Particular-0711',
+    propertyType: 6212,
+    propertyValueType: 6417,
+    canSetExpression: true,
+    canVaryOverTime: true,
+    isTimeVarying: false,
+    hasMin: true,
+    minValue: 0,
+    hasMax: true,
+    maxValue: 100,
+    unitsText: '%',
+    numKeys: 0,
+    value: 0
+  };
+  const group = {
+    numProperties: 1,
+    property(index) {
+      return index === 1 ? property : null;
+    }
+  };
+
+  const records = helpers.effectParameterTree(group, {
+    maxDepth: 4,
+    maxRecords: 10,
+    errors: [],
+    count: 0,
+    truncated: false
+  });
+
+  assert.equal(records[0].hasMin, true);
+  assert.equal(records[0].minValue, 0);
+  assert.equal(records[0].hasMax, true);
+  assert.equal(records[0].maxValue, 100);
+  assert.equal(records[0].unitsText, '%');
+});
+
+test('plugin file candidate scoring matches effect identity tokens', () => {
+  const helpers = loadContextHelpers();
+
+  const score = helpers.pluginFileCandidateScore({
+    name: 'Trapcode Particular',
+    matchName: 'tc Particular',
+    category: 'RG Particles and 3D'
+  }, 'C:/Program Files/Adobe/Common/Plug-ins/7.0/MediaCore/Trapcode/Particular.aex');
+
+  assert.ok(score > 0);
+});
+
 test('findEffectInfo matches installed effects by display name or match name', () => {
   const helpers = loadContextHelpers({
     app: {

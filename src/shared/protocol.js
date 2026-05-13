@@ -89,6 +89,88 @@ function validatePendingAction(action, options = {}) {
   return errors;
 }
 
+function validatePendingActionValueRanges(action, effectScans = []) {
+  const errors = [];
+  if (!action || !Array.isArray(action.modules)) return errors;
+  const scans = Array.isArray(effectScans) ? effectScans : [effectScans];
+
+  action.modules.forEach((module, moduleIndex) => {
+    if (!module || !Array.isArray(module.actions)) return;
+    module.actions.forEach((moduleAction, actionIndex) => {
+      if (!moduleAction || typeof moduleAction !== 'object') return;
+      if (!['setProperty', 'setKeyframes', 'modifyEffect'].includes(moduleAction.type)) return;
+      const param = findScannedParam(scans, moduleAction.effectMatchName, moduleAction.propertyPath);
+      if (!param) return;
+      const label = `modules[${moduleIndex}].actions[${actionIndex}]`;
+      if (Object.prototype.hasOwnProperty.call(moduleAction, 'value')) {
+        errors.push(...rangeErrorsForValue(label, moduleAction.value, moduleAction.effectMatchName, moduleAction.propertyPath, param));
+      }
+      if (Array.isArray(moduleAction.keys)) {
+        moduleAction.keys.forEach((key, keyIndex) => {
+          if (!key || !Object.prototype.hasOwnProperty.call(key, 'value')) return;
+          errors.push(...rangeErrorsForValue(
+            `${label}.keys[${keyIndex}]`,
+            key.value,
+            moduleAction.effectMatchName,
+            moduleAction.propertyPath,
+            param
+          ));
+        });
+      }
+    });
+  });
+  return errors;
+}
+
+function findScannedParam(scans, effectName, propertyPath) {
+  if (!nonEmptyString(effectName) || !Array.isArray(propertyPath) || propertyPath.length === 0) return null;
+  for (const scan of scans) {
+    if (!scan || !effectMatches(scan.effect, effectName)) continue;
+    const found = findParamInRecords(scan.params || [], propertyPath);
+    if (found) return found;
+  }
+  return null;
+}
+
+function effectMatches(effect, name) {
+  if (!effect) return false;
+  const needle = String(name).toLowerCase();
+  return [effect.name, effect.matchName].some((value) => String(value || '').toLowerCase() === needle);
+}
+
+function findParamInRecords(records, propertyPath) {
+  for (const record of records) {
+    if (!record) continue;
+    if (samePath(record.matchPath, propertyPath) || samePath(record.path, propertyPath)) return record;
+    if (Array.isArray(record.children)) {
+      const found = findParamInRecords(record.children, propertyPath);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+function samePath(a, b) {
+  return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((item, index) => item === b[index]);
+}
+
+function rangeErrorsForValue(label, value, effectName, propertyPath, param) {
+  const values = Array.isArray(value) ? value : [value];
+  const errors = [];
+  values.forEach((item, index) => {
+    if (typeof item !== 'number' || !Number.isFinite(item)) return;
+    const suffix = Array.isArray(value) ? `[${index}]` : '';
+    const target = `${effectName} > ${propertyPath.join(' > ')}`;
+    if (param.hasMin === true && typeof param.minValue === 'number' && item < param.minValue) {
+      errors.push(`${label}${suffix} value ${item} is below minValue ${param.minValue} for ${target}`);
+    }
+    if (param.hasMax === true && typeof param.maxValue === 'number' && item > param.maxValue) {
+      errors.push(`${label}${suffix} value ${item} is above maxValue ${param.maxValue} for ${target}`);
+    }
+  });
+  return errors;
+}
+
 function fingerprintContext(context) {
   const stable = stripVolatileFields(context);
   return crypto.createHash('sha256').update(JSON.stringify(stable)).digest('hex');
@@ -113,5 +195,6 @@ module.exports = {
   defaultSettings,
   normalizeSettings,
   validatePendingAction,
+  validatePendingActionValueRanges,
   fingerprintContext
 };
