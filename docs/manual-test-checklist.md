@@ -20,6 +20,7 @@
 - [ ] Click a plugin suggestion and confirm the search input is filled with that plugin name.
 - [ ] Click `Scan Plugin`.
 - [ ] Confirm `<bridge-folder>/effect-catalog.json` and an `effect-params/*.json` file are created.
+- [ ] Scan the same plugin again and confirm old `effect-params/*.json` files for that same plugin are removed instead of accumulating duplicates.
 - [ ] Confirm the parameter JSON includes parameter display names, match names, value types, paths, current values, and keyframe/expression capability flags where AE exposes them.
 - [ ] Confirm the parameter JSON includes `hasMin`/`minValue` and `hasMax`/`maxValue` for ranged properties where AE exposes them.
 - [ ] Confirm the parameter JSON includes `pluginFiles` candidates for plugin binaries when matching files can be found locally.

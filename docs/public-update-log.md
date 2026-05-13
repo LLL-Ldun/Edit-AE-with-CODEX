@@ -46,6 +46,7 @@ Commit: `feat: enrich plugin scan metadata`
 
 - 插件参数扫描新增 AE 暴露的范围约束记录，包括 `hasMin`、`minValue`、`hasMax`、`maxValue` 和 `unitsText`。
 - 单插件扫描结果新增 `pluginFiles` 候选，用于记录本机匹配到的 `.aex`、`.plugin`、`.dll` 等插件文件路径和元数据。
+- 同一个插件重复扫描时，会在写入新参数树前清理该插件旧的扫描 JSON，避免重复旧文件继续被 Codex 读到。
 - 新增协议级 `validatePendingActionValueRanges`，可用已扫描参数库检查 `pending-action.json` 中的 `setProperty`、`setKeyframes`、`modifyEffect` 是否越界。
 - 明确二进制插件文件只能作为文件身份和本地证据，插件语义仍需要结合参数树、预设、文档和动态探测建立。
 
@@ -53,6 +54,7 @@ English:
 
 - Plugin parameter scans now record AE-exposed range metadata, including `hasMin`, `minValue`, `hasMax`, `maxValue`, and `unitsText`.
 - Single-plugin scan output now includes `pluginFiles` candidates for locally matched `.aex`, `.plugin`, `.dll`, and related plugin files.
+- Re-scanning the same plugin now removes older scan JSON files for that plugin before writing the new parameter tree.
 - Added protocol-level `validatePendingActionValueRanges` so scanned parameter data can catch out-of-range `setProperty`, `setKeyframes`, and `modifyEffect` values before applying plans.
 - Clarified that compiled plugin binaries are file-identity evidence; semantic control still comes from parameter trees, presets, documentation, and dynamic probing.
 

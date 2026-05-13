@@ -237,6 +237,24 @@ AECreateContext.effectScanFileName = function (matchName) {
   return safe + '-' + AECreateContext.hashString(source).replace(':', '-') + '.json';
 };
 
+AECreateContext.normalizeEffectIdentity = function (value) {
+  return String(value || '').replace(/^\s+|\s+$/g, '').toLowerCase();
+};
+
+AECreateContext.effectIdentityMatches = function (a, b) {
+  var left = AECreateContext.normalizeEffectIdentity(a);
+  var right = AECreateContext.normalizeEffectIdentity(b);
+  return left && right && left === right;
+};
+
+AECreateContext.effectScanMatchesEffect = function (scan, effectInfo) {
+  if (!scan || !scan.effect || !effectInfo) return false;
+  return AECreateContext.effectIdentityMatches(scan.effect.matchName, effectInfo.matchName) ||
+    AECreateContext.effectIdentityMatches(scan.effect.name, effectInfo.name) ||
+    AECreateContext.effectIdentityMatches(scan.effect.matchName, effectInfo.name) ||
+    AECreateContext.effectIdentityMatches(scan.effect.name, effectInfo.matchName);
+};
+
 AECreateContext.findEffectInfo = function (query) {
   var needle = String(query || '').replace(/^\s+|\s+$/g, '').toLowerCase();
   if (!needle) return null;
@@ -517,9 +535,31 @@ AECreateContext.writeEffectCatalog = function (effects) {
 
 AECreateContext.writeEffectScan = function (scan) {
   var folder = AECreateContext.effectParamsFolder();
+  AECreateContext.cleanEffectScanFiles(folder, scan.effect || {});
   var file = new File(folder.fsName + '/' + AECreateContext.effectScanFileName(scan.effect.matchName || scan.effect.name));
   AECreateBridge.writeText(file, AECreateJSON.stringify(scan));
   return file.fsName;
+};
+
+AECreateContext.cleanEffectScanFiles = function (folder, effectInfo) {
+  if (!folder || !folder.exists || !effectInfo) return 0;
+  var removed = 0;
+  var files = [];
+  try {
+    files = folder.getFiles('*.json');
+  } catch (error) {
+    return removed;
+  }
+  for (var i = 0; i < files.length; i++) {
+    var file = files[i];
+    if (!(file instanceof File)) continue;
+    try {
+      var scan = AECreateJSON.parse(AECreateBridge.readText(file));
+      if (!AECreateContext.effectScanMatchesEffect(scan, effectInfo)) continue;
+      if (file.remove()) removed++;
+    } catch (cleanupError) {}
+  }
+  return removed;
 };
 
 AECreateContext.scanEffectParametersData = function (effectInfo, options) {

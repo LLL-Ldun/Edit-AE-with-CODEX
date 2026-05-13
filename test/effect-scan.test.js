@@ -26,6 +26,25 @@ test('effectScanFileName makes stable safe filenames for plugin match names', ()
   assert.match(name, /^tc-Particular-fnv1a32-[0-9a-f]{8}\.json$/);
 });
 
+test('effectScanMatchesEffect identifies stale scans for the same plugin', () => {
+  const helpers = loadContextHelpers();
+  const previousScan = {
+    effect: {
+      name: 'Trapcode Particular',
+      matchName: 'tc Particular'
+    }
+  };
+
+  assert.equal(helpers.effectScanMatchesEffect(previousScan, {
+    name: 'Trapcode Particular',
+    matchName: 'tc Particular'
+  }), true);
+  assert.equal(helpers.effectScanMatchesEffect(previousScan, {
+    name: 'Deep Glow',
+    matchName: 'PEDG'
+  }), false);
+});
+
 test('effectParameterTree records writable metadata and match paths', () => {
   const helpers = loadContextHelpers();
   const property = {
