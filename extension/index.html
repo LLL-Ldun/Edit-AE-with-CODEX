@@ -55,15 +55,23 @@
         <div class="section-title" data-i18n="pendingTitle">待应用方案</div>
         <button id="refreshPending" class="compact" data-i18n="refreshPending">刷新方案</button>
       </div>
-      <div id="pendingSummary" class="status" data-i18n="noPendingAction">暂无待应用动作。</div>
-      <div id="moduleList" class="module-list"></div>
-      <div class="button-row">
-        <button id="applyChecked" data-i18n="applyChecked">应用勾选</button>
-        <button id="discardPending" data-i18n="discardPending">丢弃</button>
-      </div>
-      <div class="button-row">
-        <button id="saveFavorite" data-i18n="saveFavorite">收藏方案</button>
-        <button id="openLogs" data-i18n="openLogs">打开日志</button>
+      <div class="pending-layout">
+        <div class="pending-current">
+          <div id="pendingSummary" class="status" data-i18n="noPendingAction">暂无待应用动作。</div>
+          <div id="moduleList" class="module-list"></div>
+          <div class="button-row">
+            <button id="applyChecked" data-i18n="applyChecked">应用勾选</button>
+            <button id="discardPending" data-i18n="discardPending">丢弃</button>
+          </div>
+          <div class="button-row">
+            <button id="saveFavorite" data-i18n="saveFavorite">收藏方案</button>
+            <button id="openLogs" data-i18n="openLogs">打开日志</button>
+          </div>
+        </div>
+        <aside class="pending-archive">
+          <div class="archive-heading" data-i18n="pendingArchiveTitle">历史方案</div>
+          <div id="pendingArchiveList" class="archive-list" data-i18n="noPendingArchive">暂无历史方案。</div>
+        </aside>
       </div>
     </section>
   </main>

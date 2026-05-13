@@ -4,6 +4,10 @@ AECreateActions.pendingFile = function () {
   return new File(AECreateBridge.bridgeFolder().fsName + '/pending-action.json');
 };
 
+AECreateActions.pendingArchiveFile = function () {
+  return new File(AECreateBridge.bridgeFolder().fsName + '/pending-plans.json');
+};
+
 AECreateActions.log = function (message) {
   var folder = AECreateBridge.ensureFolder(new Folder(AECreateBridge.bridgeFolder().fsName + '/logs'), 'logs folder');
   var file = new File(folder.fsName + '/apply.log');
@@ -17,6 +21,94 @@ AECreateActions.readPendingPlan = function () {
   var file = AECreateActions.pendingFile();
   if (!file.exists) AECreateBridge.fail('No pending-action.json found.');
   return AECreateJSON.parse(AECreateBridge.readText(file));
+};
+
+AECreateActions.hashString = function (text) {
+  var hash = 2166136261;
+  for (var i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+    hash = hash >>> 0;
+  }
+  var output = hash.toString(16);
+  while (output.length < 8) output = '0' + output;
+  return 'plan:' + output;
+};
+
+AECreateActions.planIdentity = function (plan) {
+  return {
+    schemaVersion: plan.schemaVersion,
+    createdAt: plan.createdAt,
+    contextFingerprint: plan.contextFingerprint,
+    title: plan.title,
+    summary: plan.summary,
+    target: plan.target,
+    modules: plan.modules
+  };
+};
+
+AECreateActions.planId = function (plan) {
+  return AECreateActions.hashString(AECreateJSON.stringify(AECreateActions.planIdentity(plan)));
+};
+
+AECreateActions.planActionCount = function (plan) {
+  var count = 0;
+  if (!plan || !(plan.modules instanceof Array)) return count;
+  for (var i = 0; i < plan.modules.length; i++) {
+    if (plan.modules[i] && plan.modules[i].actions instanceof Array) count += plan.modules[i].actions.length;
+  }
+  return count;
+};
+
+AECreateActions.readPendingArchive = function () {
+  var file = AECreateActions.pendingArchiveFile();
+  if (!file.exists) return { schemaVersion: 1, plans: [] };
+  try {
+    var archive = AECreateJSON.parse(AECreateBridge.readText(file));
+    if (!archive || !(archive.plans instanceof Array)) return { schemaVersion: 1, plans: [] };
+    return archive;
+  } catch (error) {
+    return { schemaVersion: 1, plans: [] };
+  }
+};
+
+AECreateActions.writePendingArchive = function (archive) {
+  AECreateBridge.writeText(AECreateActions.pendingArchiveFile(), AECreateJSON.stringify(archive));
+};
+
+AECreateActions.pendingArchiveRecord = function (plan, id) {
+  return {
+    id: id,
+    savedAt: new Date().toString(),
+    title: plan.title || 'Untitled plan',
+    summary: plan.summary || '',
+    moduleCount: plan.modules instanceof Array ? plan.modules.length : 0,
+    actionCount: AECreateActions.planActionCount(plan),
+    plan: plan
+  };
+};
+
+AECreateActions.rememberPendingPlan = function (plan) {
+  var archive = AECreateActions.readPendingArchive();
+  var id = AECreateActions.planId(plan);
+  var kept = [];
+  for (var i = 0; i < archive.plans.length; i++) {
+    if (archive.plans[i] && archive.plans[i].id !== id) kept.push(archive.plans[i]);
+  }
+  kept.unshift(AECreateActions.pendingArchiveRecord(plan, id));
+  var limit = 50;
+  if (kept.length > limit) kept = kept.slice(0, limit);
+  archive = { schemaVersion: 1, updatedAt: new Date().toString(), plans: kept };
+  AECreateActions.writePendingArchive(archive);
+  return { id: id, archive: archive };
+};
+
+AECreateActions.findArchivedPlan = function (id) {
+  var archive = AECreateActions.readPendingArchive();
+  for (var i = 0; i < archive.plans.length; i++) {
+    if (archive.plans[i] && archive.plans[i].id === id) return { archive: archive, record: archive.plans[i] };
+  }
+  return { archive: archive, record: null };
 };
 
 AECreateActions.hasField = function (object, name) {
@@ -162,15 +254,50 @@ AECreateActions.validateTargetLayerIndex = function (pending, comp) {
 
 AECreateBridge.readPendingAction = function () {
   try {
-    return AECreateBridge.respond({ ok: true, plan: AECreateActions.readPendingPlan() });
+    var plan = AECreateActions.readPendingPlan();
+    var remembered = AECreateActions.rememberPendingPlan(plan);
+    return AECreateBridge.respond({ ok: true, plan: plan, archive: remembered.archive, currentArchiveId: remembered.id });
   } catch (error) {
     return AECreateBridge.respond({ ok: false, error: 'Could not read pending-action.json: ' + String(error) });
+  }
+};
+
+AECreateBridge.listPendingArchive = function () {
+  try {
+    return AECreateBridge.respond({ ok: true, archive: AECreateActions.readPendingArchive() });
+  } catch (error) {
+    return AECreateBridge.respond({ ok: false, error: String(error) });
+  }
+};
+
+AECreateBridge.restorePendingAction = function (payloadText) {
+  try {
+    var payload = AECreateJSON.parse(payloadText || '{}');
+    if (!AECreateActions.isNonEmptyString(payload.id)) AECreateBridge.fail('restorePendingAction requires id.');
+    var found = AECreateActions.findArchivedPlan(payload.id);
+    if (!found.record || !found.record.plan) AECreateBridge.fail('Archived pending plan not found: ' + payload.id);
+    AECreateBridge.writeText(AECreateActions.pendingFile(), AECreateJSON.stringify(found.record.plan));
+    var remembered = AECreateActions.rememberPendingPlan(found.record.plan);
+    return AECreateBridge.respond({
+      ok: true,
+      message: 'Restored pending plan: ' + (found.record.plan.title || payload.id),
+      plan: found.record.plan,
+      archive: remembered.archive,
+      currentArchiveId: remembered.id
+    });
+  } catch (error) {
+    return AECreateBridge.respond({ ok: false, error: String(error) });
   }
 };
 
 AECreateBridge.discardPendingAction = function () {
   try {
     var file = AECreateActions.pendingFile();
+    if (file.exists) {
+      try {
+        AECreateActions.rememberPendingPlan(AECreateJSON.parse(AECreateBridge.readText(file)));
+      } catch (archiveError) {}
+    }
     if (file.exists && !file.remove()) AECreateBridge.fail('Unable to remove pending action: ' + file.fsName + AECreateBridge.errorSuffix(file));
     return AECreateBridge.respond({ ok: true, message: 'Discarded pending action.' });
   } catch (error) {

@@ -16,6 +16,8 @@
 - [ ] Add a test `pending-action.json` that applies a harmless preset or changes an existing effect property.
 - [ ] For a safe first apply test, copy `examples/pending-actions/opacity-pulse.json` to `<bridge-folder>/pending-action.json`, then set `target.layerIndex` and `contextFingerprint` to the values shown in `current-context.json`.
 - [ ] Confirm the pending plan appears with module checkboxes.
+- [ ] Replace `pending-action.json` with a second plan, click `Refresh Plan`, and confirm the first plan remains visible under Plan History.
+- [ ] Click a Plan History item and confirm it is restored as the current pending plan.
 - [ ] Apply one checked module.
 - [ ] Confirm the effect appears or updates on the selected layer.
 - [ ] Press Ctrl+Z once in AE and confirm the full applied module reverts.

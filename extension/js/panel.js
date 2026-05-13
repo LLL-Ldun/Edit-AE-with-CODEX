@@ -3,6 +3,8 @@
   var i18n = window.AECreatePanelI18n;
   var state = {
     pending: null,
+    pendingArchive: null,
+    currentArchiveId: null,
     language: i18n.loadLanguage(window.localStorage)
   };
 
@@ -41,6 +43,7 @@
     requireElement('languageSelect').value = state.language;
     if (!state.pending) setEmptyText('pendingSummary', 'noPendingAction');
     renderPresetPaths(state.presetPaths || []);
+    renderPendingArchive(state.pendingArchive, state.currentArchiveId);
   }
 
   function renderPending(plan) {
@@ -65,6 +68,45 @@
     });
   }
 
+  function renderPendingArchive(archive, currentArchiveId) {
+    state.pendingArchive = archive || { plans: [] };
+    state.currentArchiveId = currentArchiveId || null;
+    var list = requireElement('pendingArchiveList');
+    list.innerHTML = '';
+    list.removeAttribute('data-i18n');
+    list.removeAttribute('data-empty-i18n');
+    var plans = state.pendingArchive.plans || [];
+    var shown = 0;
+    plans.forEach(function (record) {
+      if (!record || !record.plan || record.id === state.currentArchiveId) return;
+      var item = document.createElement('button');
+      item.className = 'archive-item';
+      item.setAttribute('data-archive-id', record.id);
+
+      var title = document.createElement('span');
+      title.className = 'archive-title';
+      title.textContent = record.title || record.plan.title || 'Untitled plan';
+
+      var summary = document.createElement('span');
+      summary.className = 'archive-summary';
+      summary.textContent = record.summary || record.plan.summary || '';
+
+      var meta = document.createElement('span');
+      meta.className = 'archive-meta';
+      meta.textContent = formatActionCount(record.actionCount || 0);
+
+      item.appendChild(title);
+      item.appendChild(summary);
+      item.appendChild(meta);
+      item.addEventListener('click', function () {
+        restorePending(record.id);
+      });
+      list.appendChild(item);
+      shown++;
+    });
+    if (!shown) setEmptyText('pendingArchiveList', 'noPendingArchive');
+  }
+
   function refreshContext() {
     bridge.call('exportContext', {}).then(function (result) {
       setText('contextStatus', result.ok ? result.message : result.error);
@@ -74,10 +116,32 @@
 
   function loadPending() {
     bridge.call('readPendingAction', {}).then(function (result) {
-      if (result.ok) renderPending(result.plan);
+      if (result.ok) {
+        renderPending(result.plan);
+        renderPendingArchive(result.archive, result.currentArchiveId);
+      }
       else {
         state.pending = null;
+        state.currentArchiveId = null;
         requireElement('moduleList').innerHTML = '';
+        setText('pendingSummary', result.error);
+        loadPendingArchive();
+      }
+    });
+  }
+
+  function loadPendingArchive() {
+    bridge.call('listPendingArchive', {}).then(function (result) {
+      if (result.ok) renderPendingArchive(result.archive, state.currentArchiveId);
+    });
+  }
+
+  function restorePending(id) {
+    bridge.call('restorePendingAction', { id: id }).then(function (result) {
+      if (result.ok) {
+        renderPending(result.plan);
+        renderPendingArchive(result.archive, result.currentArchiveId);
+      } else {
         setText('pendingSummary', result.error);
       }
     });
@@ -155,6 +219,5 @@
 
   applyLanguage();
   loadSettings();
-  refreshContext();
   loadPending();
 }());

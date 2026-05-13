@@ -16,6 +16,7 @@ test('panel renders pending modules as list rows with action counts', async () =
       return Promise.resolve({
         ok: true,
         plan: {
+          archiveId: 'current-id',
           title: 'Glow Plan',
           summary: 'Apply glow at markers.',
           modules: [{
@@ -25,7 +26,26 @@ test('panel renders pending modules as list rows with action counts', async () =
             checked: true,
             actions: [{ type: 'addEffect' }, { type: 'setKeyframes' }]
           }]
+        },
+        archive: {
+          plans: [{
+            id: 'old-id',
+            savedAt: '2026-05-13T13:35:00+08:00',
+            plan: {
+              title: 'Old Shake Plan',
+              summary: 'Use shake preset.',
+              modules: [{ actions: [{ type: 'applyPreset' }] }]
+            }
+          }]
         }
+      });
+    }
+    if (name === 'restorePendingAction') {
+      return Promise.resolve({
+        ok: true,
+        plan: { title: 'Old Shake Plan', summary: 'Use shake preset.', modules: [] },
+        archive: { plans: [] },
+        message: 'Restored pending plan.'
       });
     }
     if (name === 'getSettings') return Promise.resolve({ ok: true, settings: { presetPaths: [] } });
@@ -54,6 +74,7 @@ test('panel renders pending modules as list rows with action counts', async () =
   await Promise.resolve();
 
   assert.ok(calls.includes('readPendingAction'));
+  assert.equal(calls.includes('exportContext'), false);
   assert.equal(elements.pendingSummary.textContent, 'Glow Plan\nApply glow at markers.');
   assert.equal(elements.moduleList.children.length, 1);
   assert.equal(elements.moduleList.children[0].querySelector('.module-title').textContent, 'Deep Glow');
@@ -62,6 +83,12 @@ test('panel renders pending modules as list rows with action counts', async () =
     'Pulse the selected adjustment layer.'
   );
   assert.equal(elements.moduleList.children[0].querySelector('.module-meta').textContent, '2 actions');
+  assert.equal(elements.pendingArchiveList.children.length, 1);
+  assert.equal(elements.pendingArchiveList.children[0].querySelector('.archive-title').textContent, 'Old Shake Plan');
+
+  elements.pendingArchiveList.children[0].listeners.click();
+  await Promise.resolve();
+  assert.ok(calls.includes('restorePendingAction'));
 });
 
 function createPanelElements() {
@@ -69,6 +96,7 @@ function createPanelElements() {
     'languageSelect',
     'pendingSummary',
     'moduleList',
+    'pendingArchiveList',
     'contextStatus',
     'markerList',
     'presetPathList',
@@ -149,9 +177,12 @@ function createElement(id) {
     },
     querySelector(selector) {
       if (selector === '[data-index]') return this.input || null;
-      if (selector === '.module-title') return this.title || null;
-      if (selector === '.module-summary') return this.summary || null;
-      if (selector === '.module-meta') return this.meta || null;
+      if (selector === '.module-title') return this.title || findChildByClass(this, 'module-title');
+      if (selector === '.module-summary') return this.summary || findChildByClass(this, 'module-summary');
+      if (selector === '.module-meta') return this.meta || findChildByClass(this, 'module-meta');
+      if (selector === '.archive-title') return findChildByClass(this, 'archive-title');
+      if (selector === '.archive-summary') return findChildByClass(this, 'archive-summary');
+      if (selector === '.archive-meta') return findChildByClass(this, 'archive-meta');
       return null;
     },
     set innerHTML(value) {
@@ -160,14 +191,21 @@ function createElement(id) {
         this.input = createElement('input');
         this.input.setAttribute('data-index', '0');
         this.title = createElement('title');
+        this.title.className = 'module-title';
         this.summary = createElement('summary');
+        this.summary.className = 'module-summary';
         this.meta = createElement('meta');
+        this.meta.className = 'module-meta';
       }
     },
     get innerHTML() {
       return '';
     }
   };
+}
+
+function findChildByClass(element, className) {
+  return element.children.find((child) => child.className === className) || null;
 }
 
 function createI18n() {
@@ -187,7 +225,8 @@ function createI18n() {
         customPresetPaths: 'Custom preset paths',
         scannedPresetPaths: 'Scanned paths',
         actionCountOne: '1 action',
-        actionCountMany: '{count} actions'
+        actionCountMany: '{count} actions',
+        noPendingArchive: 'No plan history.'
       };
       return translations[key] || key;
     }
