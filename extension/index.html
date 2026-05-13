@@ -30,6 +30,13 @@
 
     <section class="section">
       <div class="section-title" data-i18n="markersTitle">标记</div>
+      <label class="marker-target-control">
+        <span data-i18n="markerTargetLabel">标记目标</span>
+        <select id="markerTarget">
+          <option value="layer" data-i18n="markerTargetLayer">选中图层</option>
+          <option value="comp" data-i18n="markerTargetComp">当前合成</option>
+        </select>
+      </label>
       <div class="button-grid">
         <button data-marker="kill_icon" data-i18n="markerKill">击杀</button>
         <button data-marker="impact" data-i18n="markerImpact">冲击</button>

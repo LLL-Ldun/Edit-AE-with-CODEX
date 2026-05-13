@@ -7,15 +7,18 @@
 - [ ] Open a test composition.
 - [ ] Select one layer.
 - [ ] Add a `kill_icon` marker from the panel.
+- [ ] Switch Marker Target between selected layer and current comp, and confirm markers are created in the chosen target.
 - [ ] Click `Refresh Context`.
 - [ ] Confirm `current-context.json` exists in the bridge folder.
+- [ ] Confirm exported selected layer records include source, transform, markers, and effect property tree fields where AE exposes them.
 - [ ] In `Library`, click `Add Preset Path` if your presets live outside the default AE folders.
 - [ ] Click `Scan Presets`.
 - [ ] Confirm the scan result lists the expected preset paths, including `Documents/Adobe/After Effects`.
-- [ ] Confirm `preset-cache.json` exists and includes `.ffx` files.
+- [ ] Confirm `preset-cache.json` exists and includes `.ffx` files with source path and relative category.
 - [ ] Add a test `pending-action.json` that applies a harmless preset or changes an existing effect property.
 - [ ] For a safe first apply test, copy `examples/pending-actions/opacity-pulse.json` to `<bridge-folder>/pending-action.json`, then set `target.layerIndex` and `contextFingerprint` to the values shown in `current-context.json`.
 - [ ] Confirm the pending plan appears with module checkboxes.
+- [ ] Confirm pending plan target, warnings, requirements, and action counts are visible when provided.
 - [ ] Replace `pending-action.json` with a second plan, click `Refresh Plan`, and confirm the first plan remains visible under Plan History.
 - [ ] Click a Plan History item and confirm it is restored as the current pending plan.
 - [ ] Apply one checked module.

@@ -38,6 +38,23 @@ body {
   padding: 5px 6px;
 }
 
+.marker-target-control {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: center;
+  color: #c8c8c8;
+  margin-bottom: 8px;
+}
+
+.marker-target-control select {
+  background: #171717;
+  color: #f0f0f0;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  padding: 6px;
+}
+
 .section {
   border: 1px solid #3a3a3a;
   border-radius: 6px;
@@ -189,4 +206,19 @@ button.full {
   color: #9fb8df;
   font-size: 11px;
   margin-top: 5px;
+}
+
+.module-warning,
+.module-requirement {
+  display: block;
+  font-size: 11px;
+  margin-top: 5px;
+}
+
+.module-warning {
+  color: #f0bf77;
+}
+
+.module-requirement {
+  color: #9fb8df;
 }

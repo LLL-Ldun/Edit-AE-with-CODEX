@@ -32,6 +32,10 @@ test('panel i18n defaults to Chinese and falls back for unknown language codes',
   assert.equal(i18n.t('en', 'refreshPending'), 'Refresh Plan');
   assert.equal(i18n.t('zh', 'pendingArchiveTitle'), '历史方案');
   assert.equal(i18n.t('en', 'pendingArchiveTitle'), 'Plan History');
+  assert.equal(i18n.t('zh', 'markerTargetLabel'), '标记目标');
+  assert.equal(i18n.t('en', 'markerTargetLabel'), 'Marker Target');
+  assert.equal(i18n.t('zh', 'pendingTargetLabel'), '目标');
+  assert.equal(i18n.t('en', 'pendingWarningLabel'), 'Warning');
 });
 
 test('panel i18n applies translated static text to DOM nodes', () => {

@@ -38,6 +38,23 @@
     return text(key).replace('{count}', String(count));
   }
 
+  function selectedMarkerTarget() {
+    var element = requireElement('markerTarget');
+    return element.value === 'comp' ? 'comp' : 'layer';
+  }
+
+  function pendingTargetText(plan) {
+    if (!plan || !plan.target) return '';
+    var name = plan.target.layerName || ('Layer ' + plan.target.layerIndex);
+    var index = plan.target.layerIndex ? ' (#' + plan.target.layerIndex + ')' : '';
+    return text('pendingTargetLabel') + ': ' + name + index;
+  }
+
+  function compactList(value) {
+    if (value instanceof Array) return value.join(', ');
+    return value ? String(value) : '';
+  }
+
   function applyLanguage() {
     i18n.apply(document, state.language);
     requireElement('languageSelect').value = state.language;
@@ -54,16 +71,23 @@
       setEmptyText('pendingSummary', 'noPendingAction');
       return;
     }
-    setText('pendingSummary', plan.title + '\n' + plan.summary);
+    var summary = plan.title + '\n' + plan.summary;
+    var target = pendingTargetText(plan);
+    if (target) summary += '\n' + target;
+    setText('pendingSummary', summary);
     plan.modules.forEach(function (module, index) {
       var row = document.createElement('label');
       row.className = 'module';
       row.innerHTML =
         '<input type="checkbox" data-index="' + index + '"' + (module.checked !== false ? ' checked' : '') + '>' +
-        '<span><span class="module-title"></span><span class="module-summary"></span><span class="module-meta"></span></span>';
+        '<span><span class="module-title"></span><span class="module-summary"></span><span class="module-meta"></span><span class="module-warning"></span><span class="module-requirement"></span></span>';
       row.querySelector('.module-title').textContent = module.title;
       row.querySelector('.module-summary').textContent = module.summary;
       row.querySelector('.module-meta').textContent = formatActionCount(module.actions ? module.actions.length : 0);
+      var warnings = compactList(module.warnings);
+      var requires = compactList(module.requires);
+      row.querySelector('.module-warning').textContent = warnings ? text('pendingWarningLabel') + ': ' + warnings : '';
+      row.querySelector('.module-requirement').textContent = requires ? text('pendingRequiresLabel') + ': ' + requires : '';
       list.appendChild(row);
     });
   }
@@ -198,12 +222,12 @@
   });
   document.querySelectorAll('[data-marker]').forEach(function (button) {
     button.addEventListener('click', function () {
-      bridge.call('addMarker', { name: button.getAttribute('data-marker'), target: 'layer' }).then(refreshContext);
+      bridge.call('addMarker', { name: button.getAttribute('data-marker'), target: selectedMarkerTarget() }).then(refreshContext);
     });
   });
   requireElement('customMarker').addEventListener('click', function () {
     var name = prompt(text('markerPrompt'), 'custom_effect');
-    if (name) bridge.call('addMarker', { name: name, target: 'layer' }).then(refreshContext);
+    if (name) bridge.call('addMarker', { name: name, target: selectedMarkerTarget() }).then(refreshContext);
   });
   requireElement('applyChecked').addEventListener('click', function () {
     var checked = Array.prototype.map.call(document.querySelectorAll('[data-index]'), function (input) {

@@ -169,8 +169,30 @@ AECreateContext.propertyTree = function (group, depth) {
   return output;
 };
 
+AECreateContext.sourceRecord = function (source) {
+  if (!source) return null;
+  var record = {};
+  try {
+    if (source.name !== undefined) record.name = source.name;
+  } catch (nameError) {}
+  try {
+    if (source.duration !== undefined) record.duration = source.duration;
+  } catch (durationError) {}
+  try {
+    if (source.file && source.file.fsName) record.path = source.file.fsName;
+  } catch (fileError) {}
+  return record.name || record.duration !== undefined || record.path ? record : null;
+};
+
 AECreateContext.layerRecord = function (layer) {
   var effects = layer.property('ADBE Effect Parade');
+  var transform = layer.property('ADBE Transform Group');
+  var source = null;
+  try {
+    source = AECreateContext.sourceRecord(layer.source);
+  } catch (sourceError) {
+    source = { error: String(sourceError) };
+  }
   return {
     index: layer.index,
     name: layer.name,
@@ -178,9 +200,34 @@ AECreateContext.layerRecord = function (layer) {
     outPoint: layer.outPoint,
     startTime: layer.startTime,
     selected: layer.selected,
+    source: source,
     markers: AECreateContext.markerList(layer.property('Marker')),
+    transform: AECreateContext.propertyTree(transform, 0),
     effects: AECreateContext.propertyTree(effects, 0)
   };
+};
+
+AECreateContext.availableEffectsList = function () {
+  var effects = [];
+  var source = null;
+  try {
+    source = app.effects;
+  } catch (error) {
+    return effects;
+  }
+  if (!source || typeof source.length !== 'number') return effects;
+  for (var i = 0; i < source.length; i++) {
+    try {
+      var effect = source[i];
+      if (!effect) continue;
+      effects.push({
+        name: effect.displayName || effect.name || '',
+        matchName: effect.matchName || '',
+        category: effect.category || ''
+      });
+    } catch (effectError) {}
+  }
+  return effects;
 };
 
 AECreateContext.exportContextData = function () {
@@ -204,12 +251,25 @@ AECreateContext.exportContextData = function () {
     },
     selectedLayers: selected,
     compMarkers: AECreateContext.markerList(comp.markerProperty),
-    availableEffects: [],
+    availableEffects: AECreateContext.availableEffectsList(),
     presetCachePath: 'preset-cache.json',
     panelSettings: AECreateBridge.settings()
   };
   context.contextFingerprint = AECreateContext.fingerprintContext(context);
   return { ok: true, context: context };
+};
+
+AECreateContext.relativePresetPath = function (rootPath, filePath) {
+  var root = String(rootPath || '').replace(/\\/g, '/');
+  var file = String(filePath || '').replace(/\\/g, '/');
+  if (file.toLowerCase().indexOf(root.toLowerCase() + '/') === 0) return file.substring(root.length + 1);
+  return file;
+};
+
+AECreateContext.presetCategory = function (relativePath) {
+  var path = String(relativePath || '').replace(/\\/g, '/');
+  var index = path.lastIndexOf('/');
+  return index > 0 ? path.substring(0, index) : '';
 };
 
 AECreateContext.collectPresets = function (folder, records, state, depth) {
@@ -229,6 +289,7 @@ AECreateContext.collectPresets = function (folder, records, state, depth) {
   var key = String(folder.fsName).toLowerCase();
   if (state.seen[key]) return;
   state.seen[key] = true;
+  if (!state.rootPath) state.rootPath = folder.fsName;
 
   var items = [];
   try {
@@ -247,9 +308,13 @@ AECreateContext.collectPresets = function (folder, records, state, depth) {
           state.truncated = true;
           return;
         }
+        var relativePath = AECreateContext.relativePresetPath(state.rootPath, items[i].fsName);
         records.push({
           name: items[i].displayName,
           path: items[i].fsName,
+          sourcePath: state.rootPath,
+          relativePath: relativePath,
+          category: AECreateContext.presetCategory(relativePath),
           modified: items[i].modified.toString()
         });
       }
