@@ -16,6 +16,8 @@
 - [ ] Confirm the scan result lists the expected preset paths, including `Documents/Adobe/After Effects`.
 - [ ] Confirm `preset-cache.json` exists and includes `.ffx` files with source path and relative category.
 - [ ] In `Plugin Params`, enter an installed effect name or match name, such as `tc Particular` or `CC Particle World`.
+- [ ] In `Plugin Params`, type a partial query such as `p` and confirm matching installed effects appear in a scrollable suggestion list.
+- [ ] Click a plugin suggestion and confirm the search input is filled with that plugin name.
 - [ ] Click `Scan Plugin`.
 - [ ] Confirm `<bridge-folder>/effect-catalog.json` and an `effect-params/*.json` file are created.
 - [ ] Confirm the parameter JSON includes parameter display names, match names, value types, paths, current values, and keyframe/expression capability flags where AE exposes them.

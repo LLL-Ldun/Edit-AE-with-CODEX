@@ -85,3 +85,34 @@ test('findEffectInfo matches installed effects by display name or match name', (
   assert.equal(helpers.findEffectInfo('particular').matchName, 'tc Particular');
   assert.equal(helpers.findEffectInfo('tc Particular').name, 'Trapcode Particular');
 });
+
+test('listAvailableEffects bridge response includes effect suggestions', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'jsx', 'context.jsx'), 'utf8');
+  const context = {
+    AECreateContext: {},
+    AECreateJSON: JSON,
+    AECreateBridge: {
+      respond(object) {
+        return JSON.stringify(object);
+      }
+    },
+    app: {
+      effects: [{
+        displayName: 'Pixel Sorter 3',
+        matchName: 'GG PixelSorter3',
+        category: 'Pixel Sorter Studio'
+      }]
+    },
+    PropertyType: { PROPERTY: 6212 }
+  };
+
+  vm.runInNewContext(source, context, { filename: 'context.jsx' });
+  const result = JSON.parse(context.AECreateBridge.listAvailableEffects());
+
+  assert.equal(result.ok, true);
+  assert.equal(JSON.stringify(result.effects), JSON.stringify([{
+    name: 'Pixel Sorter 3',
+    matchName: 'GG PixelSorter3',
+    category: 'Pixel Sorter Studio'
+  }]));
+});

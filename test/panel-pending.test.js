@@ -186,6 +186,68 @@ test('plugin scan buttons send the requested effect query', async () => {
   assert.match(elements.effectScanStatus.textContent, /tc-Particular\.json/);
 });
 
+test('plugin search suggestions filter installed effects while typing', async () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'js', 'panel.js'), 'utf8');
+  const elements = createPanelElements();
+  const calls = [];
+
+  function BridgeClient() {}
+  BridgeClient.prototype.call = function call(name, payload) {
+    calls.push({ name, payload });
+    if (name === 'readPendingAction') return Promise.resolve({ ok: false, error: 'No pending.' });
+    if (name === 'listPendingArchive') return Promise.resolve({ ok: true, archive: { plans: [] } });
+    if (name === 'getSettings') return Promise.resolve({ ok: true, settings: { presetPaths: [] } });
+    if (name === 'listAvailableEffects') {
+      return Promise.resolve({
+        ok: true,
+        effects: [
+          { name: 'Pastiche', matchName: 'MB Pastiche', category: 'Motion Boutique' },
+          { name: 'Pixel Sorter 3', matchName: 'GG PixelSorter3', category: 'Pixel Sorter Studio' },
+          { name: 'Potok', matchName: 'irrealix Potok', category: 'irrealix' }
+        ]
+      });
+    }
+    return Promise.resolve({ ok: true });
+  };
+
+  const context = {
+    window: {
+      AECreateBridgeClient: BridgeClient,
+      AECreatePanelI18n: createI18n(),
+      localStorage: createStorage()
+    },
+    document: createDocument(elements),
+    Promise,
+    Number,
+    Array,
+    String,
+    prompt() {
+      return null;
+    },
+    confirm() {
+      return true;
+    }
+  };
+
+  vm.runInNewContext(source, context, { filename: 'panel.js' });
+  await Promise.resolve();
+  await Promise.resolve();
+
+  elements.effectScanQuery.value = 'p';
+  elements.effectScanQuery.listeners.input();
+  await Promise.resolve();
+  assert.equal(elements.effectSuggestionList.children.length, 3);
+  assert.equal(elements.effectSuggestionList.children[1].querySelector('.effect-suggestion-title').textContent, 'Pixel Sorter 3');
+
+  elements.effectScanQuery.value = 'pix';
+  elements.effectScanQuery.listeners.input();
+  assert.equal(elements.effectSuggestionList.children.length, 1);
+  elements.effectSuggestionList.children[0].listeners.click();
+  assert.equal(elements.effectScanQuery.value, 'Pixel Sorter 3');
+  assert.equal(elements.effectSuggestionList.children.length, 0);
+  assert.ok(calls.some((call) => call.name === 'listAvailableEffects'));
+});
+
 function createPanelElements() {
   const ids = [
     'languageSelect',
@@ -198,6 +260,7 @@ function createPanelElements() {
     'presetPathList',
     'presetStatus',
     'effectScanQuery',
+    'effectSuggestionList',
     'effectScanStatus',
     'refreshContext',
     'refreshPending',
@@ -287,6 +350,8 @@ function createElement(id) {
       if (selector === '.archive-meta') return findChildByClass(this, 'archive-meta');
       if (selector === '.module-warning') return findChildByClass(this, 'module-warning');
       if (selector === '.module-requirement') return findChildByClass(this, 'module-requirement');
+      if (selector === '.effect-suggestion-title') return findChildByClass(this, 'effect-suggestion-title');
+      if (selector === '.effect-suggestion-meta') return findChildByClass(this, 'effect-suggestion-meta');
       return null;
     },
     set innerHTML(value) {

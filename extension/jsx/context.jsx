@@ -428,6 +428,15 @@ AECreateBridge.scanEffectParams = function (payloadText) {
   }
 };
 
+AECreateBridge.listAvailableEffects = function () {
+  try {
+    var effects = AECreateContext.availableEffectsList();
+    return AECreateBridge.respond({ ok: true, effects: effects });
+  } catch (error) {
+    return AECreateBridge.respond({ ok: false, error: String(error) });
+  }
+};
+
 AECreateBridge.scanAllEffectParams = function (payloadText) {
   try {
     var payload = AECreateJSON.parse(payloadText || '{}');

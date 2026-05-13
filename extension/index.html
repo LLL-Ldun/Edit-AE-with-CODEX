@@ -59,7 +59,10 @@
 
     <section class="section">
       <div class="section-title" data-i18n="effectParamsTitle">插件参数库</div>
-      <input id="effectScanQuery" class="text-input" type="text" value="" placeholder="tc Particular / Deep Glow / CC Particle World">
+      <div class="effect-search">
+        <input id="effectScanQuery" class="text-input" type="text" value="" placeholder="tc Particular / Deep Glow / CC Particle World">
+        <div id="effectSuggestionList" class="effect-suggestion-list"></div>
+      </div>
       <div class="button-row">
         <button id="scanEffectParams" data-i18n="scanEffectParams">扫描此插件</button>
         <button id="scanAllEffectParams" data-i18n="scanAllEffectParams">扫描全部插件</button>

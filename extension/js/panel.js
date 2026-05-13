@@ -5,7 +5,9 @@
     pending: null,
     pendingArchive: null,
     currentArchiveId: null,
-    language: i18n.loadLanguage(window.localStorage)
+    language: i18n.loadLanguage(window.localStorage),
+    availableEffects: [],
+    effectsLoaded: false
   };
 
   function requireElement(id) {
@@ -194,6 +196,61 @@
     setText('effectScanStatus', lines.join('\n'));
   }
 
+  function effectSearchText(effect) {
+    return [effect.name, effect.matchName, effect.category].join(' ').toLowerCase();
+  }
+
+  function clearEffectSuggestions() {
+    requireElement('effectSuggestionList').innerHTML = '';
+  }
+
+  function selectEffectSuggestion(effect) {
+    requireElement('effectScanQuery').value = effect.name || effect.matchName || '';
+    clearEffectSuggestions();
+  }
+
+  function renderEffectSuggestions() {
+    var query = requireElement('effectScanQuery').value.replace(/^\s+|\s+$/g, '').toLowerCase();
+    var list = requireElement('effectSuggestionList');
+    list.innerHTML = '';
+    if (!query) return;
+    var shown = 0;
+    state.availableEffects.forEach(function (effect) {
+      if (shown >= 24 || effectSearchText(effect).indexOf(query) === -1) return;
+      var item = document.createElement('button');
+      item.className = 'effect-suggestion';
+      item.setAttribute('type', 'button');
+
+      var title = document.createElement('span');
+      title.className = 'effect-suggestion-title';
+      title.textContent = effect.name || effect.matchName || 'Unnamed effect';
+
+      var meta = document.createElement('span');
+      meta.className = 'effect-suggestion-meta';
+      meta.textContent = [effect.matchName, effect.category].filter(Boolean).join(' | ');
+
+      item.appendChild(title);
+      item.appendChild(meta);
+      item.addEventListener('click', function () { selectEffectSuggestion(effect); });
+      list.appendChild(item);
+      shown++;
+    });
+  }
+
+  function loadAvailableEffects() {
+    if (state.effectsLoaded) {
+      renderEffectSuggestions();
+      return;
+    }
+    bridge.call('listAvailableEffects', {}).then(function (result) {
+      if (result.ok && result.effects) {
+        state.availableEffects = result.effects;
+        state.effectsLoaded = true;
+        renderEffectSuggestions();
+      }
+    });
+  }
+
   function loadSettings() {
     bridge.call('getSettings', {}).then(function (result) {
       if (result.ok && result.settings) renderPresetPaths(result.settings.presetPaths || []);
@@ -236,6 +293,11 @@
   });
   requireElement('scanEffectParams').addEventListener('click', function () {
     bridge.call('scanEffectParams', { query: requireElement('effectScanQuery').value }).then(renderEffectScanResult);
+  });
+  requireElement('effectScanQuery').addEventListener('focus', loadAvailableEffects);
+  requireElement('effectScanQuery').addEventListener('input', function () {
+    if (!state.effectsLoaded) loadAvailableEffects();
+    else renderEffectSuggestions();
   });
   requireElement('scanAllEffectParams').addEventListener('click', function () {
     if (!confirm(text('scanAllEffectsConfirm'))) return;
