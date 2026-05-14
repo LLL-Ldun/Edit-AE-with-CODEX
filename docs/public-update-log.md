@@ -38,6 +38,21 @@ This document is public-facing and safe to push. It records shipped updates, vis
 
 ## Update History / 更新记录
 
+### 2026-05-14 - Low-Repaint Plan History Selection / 低重绘历史方案选择
+Commit: `8c94cb4`
+
+中文：
+- 根据“Codex 打开时点击历史方案更容易触发 Intel 核显蓝屏”的反馈，进一步降低历史方案点击的面板重绘量。
+- 历史方案点击现在不会重建整个历史列表 DOM，只在现有历史项上切换轻量选中类；同时保持零桥接调用、零恢复、零 `pending-action.json` 写入。
+- 选中样式去掉背景色切换，仅保留边框提示，减少 AE CEP/Chromium 面板在核显上的重绘压力。
+- 验证：新增面板回归断言，确认点击历史项不会产生桥接调用，也不会替换原历史项 DOM；`npm test` 全量 71 项通过。
+
+English:
+- Reduced plan-history click repaint after feedback that clicking history items while Codex is open could still trigger Intel integrated-GPU blue screens.
+- History selection no longer rebuilds the whole history-list DOM; it only toggles a lightweight selected class on the existing item, with no bridge calls, no restore, and no `pending-action.json` writes.
+- The selected style now keeps only a border cue and avoids background-color changes to reduce CEP/Chromium repaint pressure on integrated GPUs.
+- Verification: added panel regression coverage proving history selection makes no bridge call and keeps the same DOM item; `npm test`, 71 tests passed.
+
 ### 2026-05-14 - Safe Plan History Selection / 历史方案安全选择
 Commit: `fc2a694`
 

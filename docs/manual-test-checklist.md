@@ -39,6 +39,7 @@
 - [ ] Confirm pending plan target, warnings, requirements, and action counts are visible when provided.
 - [ ] Replace `pending-action.json` with a second plan, click `Refresh Plan`, and confirm the first plan remains visible under Plan History.
 - [ ] Click a Plan History item and confirm it is only selected/highlighted, not restored as the current pending plan.
+- [ ] With Codex open, click the same Plan History item several times and confirm only the existing item's border selection changes; the current pending plan must not change.
 - [ ] Click the Plan History item's `Delete` button and confirm it is removed from Plan History without changing the current pending plan.
 - [ ] Apply one checked module.
 - [ ] Confirm the effect appears or updates on the selected layer.
