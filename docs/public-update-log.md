@@ -40,7 +40,7 @@ This document is public-facing and safe to push. It records shipped updates, vis
 
 ### 2026-05-14 - Tutorial-Derived Workflow Library / 教程提炼 workflow 库
 
-Commit: `fc9c690`
+Commit: `f22f140`
 
 中文：
 - 将 workflow 能力合并进完整设计，明确它是工具核心上下文能力，不是单独的 Particular 示例或临时说明。
