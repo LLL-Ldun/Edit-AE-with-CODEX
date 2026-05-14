@@ -40,7 +40,7 @@ This document is public-facing and safe to push. It records shipped updates, vis
 
 ### 2026-05-14 - Localized Pending Plan Text / 待应用方案双语显示
 
-Commit: `pending`
+Commit: `8779528`
 
 中文：
 - 待应用方案现在支持 `titleI18n`、`summaryI18n`、`warningsI18n`、`requiresI18n` 等双语字段。
