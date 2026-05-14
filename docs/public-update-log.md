@@ -38,6 +38,22 @@ This document is public-facing and safe to push. It records shipped updates, vis
 
 ## Update History / 更新记录
 
+### 2026-05-14 - Real Parameter Names in Pending Preview / 待应用预览显示真实参数名
+
+Commit: `pending`
+
+中文：
+- 待应用方案参数预览现在优先显示 AE/插件 UI 中的真实参数名，而不是让用户根据 `tc Particular-0146`、`keys[1].value` 等内部字段猜含义。
+- `readPendingAction` 会读取已扫描的 `effect-params/*.json`，按 `effectMatchName` 和 `propertyPath` 匹配真实 `path/name`，并给动作补充 `propertyPathDisplay` 与 `parameterName`。
+- 面板会优先显示 `propertyPathDisplay`、`propertyPathLabels`、`propertyPathNames` 等真实显示路径；找不到扫描结果时才回退到内部路径。
+- 验证：新增执行器回归测试，覆盖从扫描参数库把 `tc Particular-0146` 解析成 `粒子/秒`；扩展面板测试，覆盖真实参数名优先显示。
+
+English:
+- Pending parameter preview now prefers the real AE/plugin UI parameter names instead of asking users to infer meaning from internal fields such as `tc Particular-0146` or `keys[1].value`.
+- `readPendingAction` reads scanned `effect-params/*.json` files, matches by `effectMatchName` and `propertyPath`, and enriches actions with `propertyPathDisplay` and `parameterName`.
+- The panel prefers real display paths such as `propertyPathDisplay`, `propertyPathLabels`, and `propertyPathNames`; internal paths are only used as a fallback.
+- Verification: added executor coverage for resolving `tc Particular-0146` to `粒子/秒` from the scan cache, and expanded panel coverage for real parameter-name precedence.
+
 ### 2026-05-14 - Localized Parameter Preview Labels / 参数预览标签随语言切换
 
 Commit: `0969cc4`

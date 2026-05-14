@@ -240,12 +240,14 @@ test('panel lets users review and edit action parameters before applying', async
                 type: 'setProperty',
                 effectMatchName: 'Deep Glow',
                 propertyPath: ['Glow Radius'],
+                propertyPathDisplay: ['发光半径'],
                 value: 35
               },
               {
                 type: 'setKeyframes',
                 effectMatchName: 'Deep Glow',
-                propertyPath: ['Exposure'],
+                propertyPath: ['tc Particular-0146'],
+                propertyPathDisplay: ['粒子/秒'],
                 keys: [
                   { time: 1.25, value: 0.4 },
                   { time: 1.75, value: 1.2 }
@@ -291,16 +293,16 @@ test('panel lets users review and edit action parameters before applying', async
   assert.equal(parameterInputs[6].value, '35');
   assert.match(combinedText(elements.moduleList), /图层: particles \| 名称/);
   assert.match(combinedText(elements.moduleList), /图层: particles \| 持续时间/);
-  assert.match(combinedText(elements.moduleList), /效果: Deep Glow > Glow Radius \| 数值/);
-  assert.match(combinedText(elements.moduleList), /效果: Deep Glow > Exposure \| 关键帧 2 数值/);
-  assert.doesNotMatch(combinedText(elements.moduleList), /keys\[1\]\.value|duration|startTime/);
+  assert.match(combinedText(elements.moduleList), /效果: Deep Glow > 发光半径 \| 数值/);
+  assert.match(combinedText(elements.moduleList), /效果: Deep Glow > 粒子\/秒 \| 关键帧 2 数值/);
+  assert.doesNotMatch(combinedText(elements.moduleList), /keys\[1\]\.value|duration|startTime|tc Particular-0146/);
 
   elements.languageSelect.value = 'en';
   elements.languageSelect.listeners.change.call(elements.languageSelect);
   assert.match(combinedText(elements.moduleList), /Layer: particles \| Name/);
   assert.match(combinedText(elements.moduleList), /Layer: particles \| Duration/);
-  assert.match(combinedText(elements.moduleList), /Effect: Deep Glow > Glow Radius \| Value/);
-  assert.match(combinedText(elements.moduleList), /Effect: Deep Glow > Exposure \| Keyframe 2 Value/);
+  assert.match(combinedText(elements.moduleList), /Effect: Deep Glow > 发光半径 \| Value/);
+  assert.match(combinedText(elements.moduleList), /Effect: Deep Glow > 粒子\/秒 \| Keyframe 2 Value/);
 
   const englishInputs = elements.moduleList.querySelectorAll('[data-param-edit]');
   englishInputs[6].value = '64';
@@ -647,6 +649,7 @@ function createI18n(initialLanguage = 'en') {
           paramFieldName: '名称',
           paramFieldColor: '颜色',
           paramFieldWidth: '宽度',
+          paramFieldHeight: '高度',
           paramFieldDuration: '持续时间',
           paramFieldStartTime: '开始时间',
           paramKeyTime: '关键帧 {index} 时间',
@@ -673,6 +676,7 @@ function createI18n(initialLanguage = 'en') {
           paramFieldName: 'Name',
           paramFieldColor: 'Color',
           paramFieldWidth: 'Width',
+          paramFieldHeight: 'Height',
           paramFieldDuration: 'Duration',
           paramFieldStartTime: 'Start Time',
           paramKeyTime: 'Keyframe {index} Time',

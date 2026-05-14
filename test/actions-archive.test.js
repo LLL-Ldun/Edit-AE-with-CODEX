@@ -36,6 +36,38 @@ test('restorePendingAction writes an archived plan back to pending-action.json',
   assert.equal(pending.title, 'First Plan');
 });
 
+test('readPendingAction enriches effect property labels from scanned params', () => {
+  const plan = createPlan('Particular Plan');
+  plan.modules[0].actions = [{
+    type: 'setKeyframes',
+    effectMatchName: 'tc Particular',
+    propertyPath: ['tc Particular-0146'],
+    keys: [
+      { time: 1, value: 100 },
+      { time: 2, value: 200 }
+    ]
+  }];
+  const context = loadActionsWithFiles({
+    'C:/bridge/pending-action.json': JSON.stringify(plan),
+    'C:/bridge/effect-params/tc-Particular.json': JSON.stringify({
+      effect: { name: 'Trapcode Particular', matchName: 'tc Particular' },
+      params: [{
+        name: '粒子/秒',
+        matchName: 'tc Particular-0146',
+        path: ['粒子/秒'],
+        matchPath: ['tc Particular-0146']
+      }]
+    })
+  });
+
+  const result = JSON.parse(context.AECreateBridge.readPendingAction());
+  const action = result.plan.modules[0].actions[0];
+
+  assert.equal(result.ok, true, result.error);
+  assert.deepEqual(action.propertyPathDisplay, ['粒子/秒']);
+  assert.equal(action.parameterName, '粒子/秒');
+});
+
 function loadActionsWithFiles(initialFiles) {
   const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'jsx', 'actions.jsx'), 'utf8');
   const files = { ...initialFiles };
@@ -44,6 +76,14 @@ function loadActionsWithFiles(initialFiles) {
     this.fsName = fsName.replace(/\\/g, '/');
     this.exists = true;
   }
+  Folder.prototype.getFiles = function getFiles(pattern) {
+    const prefix = this.fsName.replace(/\/$/, '') + '/';
+    return Object.keys(files)
+      .filter((name) => name.startsWith(prefix))
+      .filter((name) => !name.slice(prefix.length).includes('/'))
+      .filter((name) => !pattern || pattern === '*.json' ? name.endsWith('.json') : true)
+      .map((name) => new File(name));
+  };
 
   function File(fsName) {
     this.fsName = fsName.replace(/\\/g, '/');

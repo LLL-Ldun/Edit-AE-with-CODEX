@@ -23,6 +23,80 @@ AECreateActions.readPendingPlan = function () {
   return AECreateJSON.parse(AECreateBridge.readText(file));
 };
 
+AECreateActions.effectParamsFolder = function () {
+  return new Folder(AECreateBridge.bridgeFolder().fsName + '/effect-params');
+};
+
+AECreateActions.effectScanMatches = function (effect, effectName) {
+  if (!effect || !AECreateActions.isNonEmptyString(effectName)) return false;
+  var needle = String(effectName).toLowerCase();
+  return String(effect.name || '').toLowerCase() === needle || String(effect.matchName || '').toLowerCase() === needle;
+};
+
+AECreateActions.samePath = function (left, right) {
+  if (!(left instanceof Array) || !(right instanceof Array) || left.length !== right.length) return false;
+  for (var i = 0; i < left.length; i++) {
+    if (left[i] !== right[i]) return false;
+  }
+  return true;
+};
+
+AECreateActions.findScannedParamRecord = function (records, propertyPath) {
+  if (!(records instanceof Array) || !(propertyPath instanceof Array)) return null;
+  for (var i = 0; i < records.length; i++) {
+    var record = records[i];
+    if (!record || typeof record !== 'object') continue;
+    if (AECreateActions.samePath(record.matchPath, propertyPath) || AECreateActions.samePath(record.path, propertyPath)) return record;
+    if (propertyPath.length === 1 && record.matchName === propertyPath[0]) return record;
+    var child = AECreateActions.findScannedParamRecord(record.children, propertyPath);
+    if (child) return child;
+  }
+  return null;
+};
+
+AECreateActions.lookupScannedParam = function (effectName, propertyPath) {
+  var folder = AECreateActions.effectParamsFolder();
+  if (!folder.exists || !folder.getFiles) return null;
+  var files = folder.getFiles('*.json');
+  for (var i = 0; i < files.length; i++) {
+    try {
+      var scan = AECreateJSON.parse(AECreateBridge.readText(files[i]));
+      if (!scan || !AECreateActions.effectScanMatches(scan.effect, effectName)) continue;
+      var record = AECreateActions.findScannedParamRecord(scan.params, propertyPath);
+      if (record) return { scan: scan, record: record };
+    } catch (scanError) {}
+  }
+  return null;
+};
+
+AECreateActions.enrichActionDisplayNames = function (action) {
+  if (!action || typeof action !== 'object' || !(action.propertyPath instanceof Array) || !AECreateActions.isNonEmptyString(action.effectMatchName)) return;
+  if (action.propertyPathDisplay instanceof Array && action.propertyPathDisplay.length) return;
+  var found = AECreateActions.lookupScannedParam(action.effectMatchName, action.propertyPath);
+  if (!found || !found.record) return;
+  if (found.scan && found.scan.effect && AECreateActions.isNonEmptyString(found.scan.effect.name)) action.effectDisplayName = found.scan.effect.name;
+  if (found.record.path instanceof Array && found.record.path.length) {
+    action.propertyPathDisplay = found.record.path;
+  } else if (AECreateActions.isNonEmptyString(found.record.name)) {
+    action.propertyPathDisplay = [found.record.name];
+  }
+  if (action.propertyPathDisplay instanceof Array && action.propertyPathDisplay.length) {
+    action.parameterName = action.propertyPathDisplay[action.propertyPathDisplay.length - 1];
+  }
+};
+
+AECreateActions.enrichPendingPlanDisplayNames = function (plan) {
+  if (!plan || !(plan.modules instanceof Array)) return plan;
+  for (var m = 0; m < plan.modules.length; m++) {
+    var module = plan.modules[m];
+    if (!module || !(module.actions instanceof Array)) continue;
+    for (var a = 0; a < module.actions.length; a++) {
+      AECreateActions.enrichActionDisplayNames(module.actions[a]);
+    }
+  }
+  return plan;
+};
+
 AECreateActions.hashString = function (text) {
   var hash = 2166136261;
   for (var i = 0; i < text.length; i++) {
@@ -264,7 +338,7 @@ AECreateActions.validateTargetLayerIndex = function (pending, comp) {
 
 AECreateBridge.readPendingAction = function () {
   try {
-    var plan = AECreateActions.readPendingPlan();
+    var plan = AECreateActions.enrichPendingPlanDisplayNames(AECreateActions.readPendingPlan());
     var remembered = AECreateActions.rememberPendingPlan(plan);
     return AECreateBridge.respond({ ok: true, plan: plan, archive: remembered.archive, currentArchiveId: remembered.id });
   } catch (error) {

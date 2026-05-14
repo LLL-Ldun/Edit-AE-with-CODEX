@@ -213,7 +213,10 @@
 
   function actionTargetInfo(action) {
     if (action.effectMatchName && action.propertyPath) {
-      return { kind: 'effect', target: action.effectMatchName + ' > ' + action.propertyPath.join(' > ') };
+      var displayPath = action.propertyPathDisplay || action.propertyDisplayPath || action.propertyPathLabels || action.propertyPathNames || action.propertyPath;
+      if (!Array.isArray(displayPath)) displayPath = [displayPath];
+      var effectName = action.effectDisplayName || action.effectName || action.effectMatchName;
+      return { kind: 'effect', target: effectName + ' > ' + displayPath.join(' > ') };
     }
     if (action.ref || action.targetRef || action.layerRef) return { kind: 'layer', target: action.ref || action.targetRef || action.layerRef };
     if (
