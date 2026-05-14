@@ -180,6 +180,12 @@
     return output;
   }
 
+  function fillTemplate(template, values) {
+    return String(template).replace(/\{([a-zA-Z0-9_]+)\}/g, function (match, key) {
+      return values && values[key] !== undefined ? String(values[key]) : match;
+    });
+  }
+
   function parameterValueText(value) {
     if (value && typeof value === 'object') return JSON.stringify(value);
     if (value === undefined || value === null) return '';
@@ -205,18 +211,61 @@
     return textValue;
   }
 
-  function actionTargetText(action) {
+  function actionTargetInfo(action) {
     if (action.effectMatchName && action.propertyPath) {
-      return action.effectMatchName + ' > ' + action.propertyPath.join(' > ');
+      return { kind: 'effect', target: action.effectMatchName + ' > ' + action.propertyPath.join(' > ') };
     }
-    if (action.matchName || action.name) return action.matchName || action.name;
-    if (action.targetRef || action.layerRef) return action.targetRef || action.layerRef;
-    if (action.ref) return action.ref;
-    return action.type || 'action';
+    if (action.ref || action.targetRef || action.layerRef) return { kind: 'layer', target: action.ref || action.targetRef || action.layerRef };
+    if (
+      action.type === 'addSolidLayer' ||
+      action.type === 'addAdjustmentLayer' ||
+      action.type === 'addLightLayer' ||
+      action.type === 'addNullLayer' ||
+      action.type === 'setLayerProperties'
+    ) {
+      return { kind: 'layer', target: action.name || action.type };
+    }
+    return { kind: 'action', target: action.matchName || action.name || action.type || 'action' };
+  }
+
+  function localizedParameterTarget(action) {
+    var info = actionTargetInfo(action);
+    var key = info.kind === 'effect' ? 'paramTargetEffect' : (info.kind === 'layer' ? 'paramTargetLayer' : 'paramTargetAction');
+    return fillTemplate(text(key), { target: info.target });
+  }
+
+  function localizedParamField(path) {
+    if (path[0] === 'keys' && typeof path[1] === 'number') {
+      var keyNumber = path[1] + 1;
+      if (path[2] === 'time') return fillTemplate(text('paramKeyTime'), { index: keyNumber });
+      if (path[2] === 'value') return fillTemplate(text('paramKeyValue'), { index: keyNumber });
+    }
+    var last = path[path.length - 1];
+    var fieldKeys = {
+      value: 'paramFieldValue',
+      name: 'paramFieldName',
+      color: 'paramFieldColor',
+      width: 'paramFieldWidth',
+      height: 'paramFieldHeight',
+      pixelAspect: 'paramFieldPixelAspect',
+      duration: 'paramFieldDuration',
+      startTime: 'paramFieldStartTime',
+      inPoint: 'paramFieldInPoint',
+      outPoint: 'paramFieldOutPoint',
+      enabled: 'paramFieldEnabled',
+      opacity: 'paramFieldOpacity',
+      blendingMode: 'paramFieldBlendingMode',
+      position: 'paramFieldPosition',
+      lightType: 'paramFieldLightType',
+      intensity: 'paramFieldIntensity',
+      expression: 'paramFieldExpression',
+      path: 'paramFieldPath'
+    };
+    return fieldKeys[last] ? text(fieldKeys[last]) : formatParamPath(path);
   }
 
   function parameterLabel(action, path) {
-    return actionTargetText(action) + ' | ' + formatParamPath(path);
+    return localizedParameterTarget(action) + ' | ' + localizedParamField(path);
   }
 
   function renderParameterInput(action, moduleIndex, actionIndex, path) {

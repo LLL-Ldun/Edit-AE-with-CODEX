@@ -227,6 +227,16 @@ test('panel lets users review and edit action parameters before applying', async
             checked: true,
             actions: [
               {
+                type: 'addSolidLayer',
+                ref: 'particles',
+                name: 'AEcreate particles',
+                color: [0, 0, 0],
+                width: 2560,
+                height: 1440,
+                duration: 5,
+                startTime: 27.85
+              },
+              {
                 type: 'setProperty',
                 effectMatchName: 'Deep Glow',
                 propertyPath: ['Glow Radius'],
@@ -257,8 +267,8 @@ test('panel lets users review and edit action parameters before applying', async
   const context = {
     window: {
       AECreateBridgeClient: BridgeClient,
-      AECreatePanelI18n: createI18n(),
-      localStorage: createStorage()
+      AECreatePanelI18n: createI18n('zh'),
+      localStorage: createStorage('zh')
     },
     document: createDocument(elements),
     Promise,
@@ -276,23 +286,35 @@ test('panel lets users review and edit action parameters before applying', async
   await Promise.resolve();
 
   const parameterInputs = elements.moduleList.querySelectorAll('[data-param-edit]');
-  assert.equal(parameterInputs.length, 5);
-  assert.equal(parameterInputs[0].value, '35');
-  assert.match(combinedText(elements.moduleList), /Deep Glow > Glow Radius/);
-  assert.match(combinedText(elements.moduleList), /keys\[1\]\.value/);
+  assert.equal(parameterInputs.length, 11);
+  assert.equal(parameterInputs[0].value, 'AEcreate particles');
+  assert.equal(parameterInputs[6].value, '35');
+  assert.match(combinedText(elements.moduleList), /图层: particles \| 名称/);
+  assert.match(combinedText(elements.moduleList), /图层: particles \| 持续时间/);
+  assert.match(combinedText(elements.moduleList), /效果: Deep Glow > Glow Radius \| 数值/);
+  assert.match(combinedText(elements.moduleList), /效果: Deep Glow > Exposure \| 关键帧 2 数值/);
+  assert.doesNotMatch(combinedText(elements.moduleList), /keys\[1\]\.value|duration|startTime/);
 
-  parameterInputs[0].value = '64';
-  parameterInputs[3].value = '2.00';
-  parameterInputs[4].value = '1.8';
+  elements.languageSelect.value = 'en';
+  elements.languageSelect.listeners.change.call(elements.languageSelect);
+  assert.match(combinedText(elements.moduleList), /Layer: particles \| Name/);
+  assert.match(combinedText(elements.moduleList), /Layer: particles \| Duration/);
+  assert.match(combinedText(elements.moduleList), /Effect: Deep Glow > Glow Radius \| Value/);
+  assert.match(combinedText(elements.moduleList), /Effect: Deep Glow > Exposure \| Keyframe 2 Value/);
+
+  const englishInputs = elements.moduleList.querySelectorAll('[data-param-edit]');
+  englishInputs[6].value = '64';
+  englishInputs[9].value = '2.00';
+  englishInputs[10].value = '1.8';
 
   elements.moduleList.children[0].querySelector('[data-index]').checked = true;
   elements.applyChecked.listeners.click();
   await Promise.resolve();
 
   const applyCall = calls.find((call) => call.name === 'applyCheckedModules');
-  assert.equal(applyCall.payload.plan.modules[0].actions[0].value, 64);
-  assert.equal(applyCall.payload.plan.modules[0].actions[1].keys[1].time, 2);
-  assert.equal(applyCall.payload.plan.modules[0].actions[1].keys[1].value, 1.8);
+  assert.equal(applyCall.payload.plan.modules[0].actions[1].value, 64);
+  assert.equal(applyCall.payload.plan.modules[0].actions[2].keys[1].time, 2);
+  assert.equal(applyCall.payload.plan.modules[0].actions[2].keys[1].value, 1.8);
 });
 
 test('marker buttons use the selected marker target', async () => {
@@ -615,7 +637,20 @@ function createI18n(initialLanguage = 'en') {
           pendingTargetLabel: '目标',
           pendingWarningLabel: '警告',
           pendingRequiresLabel: '依赖',
-          pendingAppliedModules: '已应用模块: {modules}'
+          pendingAppliedModules: '已应用模块: {modules}',
+          parameterPreviewTitle: '参数预览，可修改后再应用',
+          pendingInvalidParameter: '参数格式无效：{error}',
+          paramTargetEffect: '效果: {target}',
+          paramTargetLayer: '图层: {target}',
+          paramTargetAction: '动作: {target}',
+          paramFieldValue: '数值',
+          paramFieldName: '名称',
+          paramFieldColor: '颜色',
+          paramFieldWidth: '宽度',
+          paramFieldDuration: '持续时间',
+          paramFieldStartTime: '开始时间',
+          paramKeyTime: '关键帧 {index} 时间',
+          paramKeyValue: '关键帧 {index} 数值'
         },
         en: {
           noPendingAction: 'No pending action.',
@@ -628,7 +663,20 @@ function createI18n(initialLanguage = 'en') {
           pendingTargetLabel: 'Target',
           pendingWarningLabel: 'Warning',
           pendingRequiresLabel: 'Requires',
-          pendingAppliedModules: 'Applied modules: {modules}'
+          pendingAppliedModules: 'Applied modules: {modules}',
+          parameterPreviewTitle: 'Parameter Preview - edit before applying',
+          pendingInvalidParameter: 'Invalid parameter format: {error}',
+          paramTargetEffect: 'Effect: {target}',
+          paramTargetLayer: 'Layer: {target}',
+          paramTargetAction: 'Action: {target}',
+          paramFieldValue: 'Value',
+          paramFieldName: 'Name',
+          paramFieldColor: 'Color',
+          paramFieldWidth: 'Width',
+          paramFieldDuration: 'Duration',
+          paramFieldStartTime: 'Start Time',
+          paramKeyTime: 'Keyframe {index} Time',
+          paramKeyValue: 'Keyframe {index} Value'
         }
       };
       return (translations[language] && translations[language][key]) || translations.en[key] || key;

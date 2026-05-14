@@ -38,9 +38,25 @@ This document is public-facing and safe to push. It records shipped updates, vis
 
 ## Update History / 更新记录
 
-### 2026-05-14 - Editable Pending Plan Parameters / 待应用方案参数预览与编辑
+### 2026-05-14 - Localized Parameter Preview Labels / 参数预览标签随语言切换
 
 Commit: `pending`
+
+中文：
+- 参数预览列表现在会根据面板语言显示标签，中文界面使用“图层 / 效果 / 名称 / 持续时间 / 关键帧数值”等中文字段。
+- 切换到 English 后，同一参数列表会显示 `Layer`、`Effect`、`Name`、`Duration`、`Keyframe Value` 等英文标签。
+- 保留插件自身参数名和用户定义图层引用，避免误翻译第三方插件的实际参数路径。
+- 验证：扩展面板回归测试，覆盖中文标签、英文标签，以及不再显示 `duration`、`startTime`、`keys[1].value` 这类内部字段路径。
+
+English:
+- Parameter preview labels now follow the selected panel language; Chinese UI shows Chinese labels for layer/effect targets, names, duration, and keyframe values.
+- Switching to English re-renders the same parameter list with `Layer`, `Effect`, `Name`, `Duration`, `Keyframe Value`, and related labels.
+- Plugin-provided parameter names and user-defined layer refs remain unchanged to avoid mistranslating real plugin paths.
+- Verification: expanded panel regression coverage for Chinese labels, English labels, and removal of internal path labels such as `duration`, `startTime`, and `keys[1].value`.
+
+### 2026-05-14 - Editable Pending Plan Parameters / 待应用方案参数预览与编辑
+
+Commit: `615a498`
 
 中文：
 - 待应用方案模块下新增参数预览区，自动列出 `setProperty`、`setKeyframes`、`modifyEffect`、图层创建/图层属性等动作里的可编辑参数。
