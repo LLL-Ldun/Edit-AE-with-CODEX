@@ -86,8 +86,6 @@ node --test
 - Public update log: `docs/public-update-log.md`
 - Manual AE test checklist: `docs/manual-test-checklist.md`
 - Plugin workflow library: `docs/plugin-workflow-library.md`
-- Design spec: `docs/superpowers/specs/2026-05-12-ae-codex-effect-bridge-design.md`
-- Implementation plan: `docs/superpowers/plans/2026-05-12-ae-codex-effect-bridge-implementation.md`
 
 ## Safety
 
