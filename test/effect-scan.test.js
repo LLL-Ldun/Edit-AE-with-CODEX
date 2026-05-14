@@ -218,6 +218,68 @@ test('pluginWorkflow prefers the minimum layer count for particle effects', () =
   assert.ok(workflow.recommendedActionTypes.includes('setLayerProperties'));
 });
 
+test('visualWorkflowLibrary teaches color-keyed edge particles as a preprocess-plus-particle flow', () => {
+  const helpers = loadContextHelpers();
+
+  const workflows = helpers.visualWorkflowLibrary();
+  const keyedParticles = workflows.find((entry) => entry.id === 'color-keyed-edge-particles');
+
+  assert.ok(keyedParticles);
+  assert.equal(keyedParticles.goalType, 'visual-preprocess-plus-particle');
+  assert.equal(keyedParticles.layerPolicy.priority, 'minimum-layers-first');
+  assert.equal(keyedParticles.layerPolicy.defaultLayerCount, 2);
+  assert.ok(keyedParticles.matchTokens.includes('刀刃'));
+  assert.ok(keyedParticles.recommendedActionTypes.includes('duplicateLayer'));
+  assert.ok(keyedParticles.requiredPlanningSteps.map((step) => step.id).includes('isolate-key-color'));
+  assert.ok(keyedParticles.requiredPlanningSteps.map((step) => step.id).includes('connect-matte-to-particles'));
+});
+
+test('supportedActionTypes includes duplicateLayer for non-destructive keyed sources', () => {
+  const helpers = loadContextHelpers();
+
+  assert.ok(helpers.supportedActionTypes.includes('duplicateLayer'));
+});
+
+test('exportContextData includes the visual workflow library for AI planning', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'jsx', 'context.jsx'), 'utf8');
+  class CompItem {}
+  const comp = new CompItem();
+  comp.name = 'Comp';
+  comp.width = 1920;
+  comp.height = 1080;
+  comp.frameRate = 60;
+  comp.duration = 10;
+  comp.time = 1;
+  comp.selectedLayers = [];
+  comp.markerProperty = null;
+  const sandbox = {
+    AECreateContext: {},
+    AECreateBridge: { settings: () => ({ bridgeDir: 'D:/Bridge' }) },
+    AECreateJSON: JSON,
+    app: {
+      project: {
+        file: null,
+        activeItem: comp
+      },
+      effects: []
+    },
+    CompItem,
+    PropertyType: { PROPERTY: 6212 },
+    Date,
+    String,
+    Math,
+    isFinite
+  };
+  vm.runInNewContext(source, sandbox, { filename: 'context.jsx' });
+
+  const result = sandbox.AECreateContext.exportContextData();
+
+  assert.equal(result.ok, true);
+  assert.equal(result.context.visualWorkflowLibrary.schemaVersion, 1);
+  assert.ok(result.context.visualWorkflowLibrary.entries.some((entry) => entry.id === 'color-keyed-edge-particles'));
+  assert.ok(result.context.supportedActionTypes.includes('duplicateLayer'));
+});
+
 test('built-in plugin workflows declare minimum-layer defaults', () => {
   const helpers = loadContextHelpers();
 

@@ -14,6 +14,7 @@ const allowedActionTypes = [
   'setProperty',
   'setKeyframes',
   'setExpression',
+  'duplicateLayer',
   'addSolidLayer',
   'addAdjustmentLayer',
   'addLightLayer',

@@ -482,3 +482,138 @@ test('applyModule can create and target an adjustment layer workflow', () => {
   assert.deepEqual(Array.from(result.effects), ['Twitch']);
   assert.deepEqual(Array.from(result.calls).map((call) => call.type), ['addSolid', 'moveBefore']);
 });
+
+test('applyModule can duplicate the target layer as a keyed source and reference it from an effect property', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'jsx', 'actions.jsx'), 'utf8');
+
+  class CompItem {}
+  const context = vm.createContext({
+    AECreateBridge: {
+      respond(object) {
+        return JSON.stringify(object);
+      },
+      fail(message) {
+        throw new Error(message);
+      }
+    },
+    app: { project: { activeItem: null } },
+    CompItem,
+    BlendingMode: { ADD: 'ADD', NORMAL: 'NORMAL' },
+    Error,
+    String,
+    isFinite,
+    Math
+  });
+  context.AECreateJSON = vm.runInContext('JSON', context);
+
+  vm.runInContext(source, context, { filename: 'actions.jsx' });
+  const result = vm.runInContext(`
+    (function () {
+      var calls = [];
+      var layerRefValue = null;
+      var keyedLayer = {
+        index: 2,
+        name: '',
+        duplicate: null,
+        moveBefore: function (layer) {
+          calls.push({ type: 'matteMoveBefore', target: layer.name });
+        },
+        property: function () {
+          return null;
+        }
+      };
+      var targetLayer = {
+        index: 1,
+        name: 'canju.mp4',
+        duplicate: function () {
+          calls.push({ type: 'duplicateTarget' });
+          return keyedLayer;
+        }
+      };
+      var particularEffect = {
+        name: 'Trapcode Particular',
+        matchName: 'tc Particular',
+        property: function (name) {
+          if (name === 'tc Particular-0542') {
+            return {
+              setValue: function (value) {
+                layerRefValue = value;
+              }
+            };
+          }
+          return null;
+        }
+      };
+      var solidEffects = {
+        added: [],
+        numProperties: 0,
+        addProperty: function (name) {
+          this.added.push(name);
+          this.numProperties = 1;
+          calls.push({ type: 'solidEffect', name: name });
+          return particularEffect;
+        },
+        property: function (index) {
+          return index === 1 ? particularEffect : null;
+        }
+      };
+      var solidLayer = {
+        name: '',
+        property: function (name) {
+          if (name === 'ADBE Effect Parade') return solidEffects;
+          if (name === 'ADBE Transform Group') return { property: function () { return { setValue: function () {} }; } };
+          return null;
+        },
+        moveBefore: function (layer) {
+          calls.push({ type: 'solidMoveBefore', target: layer.name });
+        }
+      };
+      var comp = new CompItem();
+      comp.width = 1280;
+      comp.height = 720;
+      comp.pixelAspect = 1;
+      comp.duration = 20;
+      comp.layers = {
+        addSolid: function (color, name) {
+          calls.push({ type: 'addSolid', name: name });
+          solidLayer.name = name;
+          return solidLayer;
+        }
+      };
+
+      AECreateActions.applyModule(targetLayer, {
+        id: 'm1',
+        title: 'Color keyed particles',
+        summary: 'Duplicate source, key it, and point particles at it.',
+        actions: [
+          { type: 'duplicateLayer', ref: 'bladeMatte', name: 'AEcreate blade edge matte', inPoint: 30, outPoint: 32, guideLayer: true },
+          { type: 'addSolidLayer', ref: 'particles', name: 'AEcreate particles', color: [0, 0, 0], inPoint: 30, outPoint: 32, blendingMode: 'ADD' },
+          { type: 'addEffect', targetRef: 'particles', matchName: 'tc Particular' },
+          { type: 'setProperty', targetRef: 'particles', effectMatchName: 'tc Particular', propertyPath: ['tc Particular-0542'], valueLayerRef: 'bladeMatte' }
+        ]
+      }, 0, { comp: comp, targetLayer: targetLayer, layersByRef: {} });
+
+      return {
+        calls: calls,
+        keyedName: keyedLayer.name,
+        keyedInPoint: keyedLayer.inPoint,
+        keyedOutPoint: keyedLayer.outPoint,
+        keyedGuideLayer: keyedLayer.guideLayer,
+        layerRefValue: layerRefValue
+      };
+    })()
+  `, context);
+
+  assert.equal(result.keyedName, 'AEcreate blade edge matte');
+  assert.equal(result.keyedInPoint, 30);
+  assert.equal(result.keyedOutPoint, 32);
+  assert.equal(result.keyedGuideLayer, true);
+  assert.equal(result.layerRefValue, 2);
+  assert.deepEqual(Array.from(result.calls).map((call) => call.type), [
+    'duplicateTarget',
+    'matteMoveBefore',
+    'addSolid',
+    'solidMoveBefore',
+    'solidEffect'
+  ]);
+});

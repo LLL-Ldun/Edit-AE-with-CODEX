@@ -435,6 +435,7 @@ AECreateContext.supportedActionTypes = [
   'setProperty',
   'setKeyframes',
   'setExpression',
+  'duplicateLayer',
   'addSolidLayer',
   'addAdjustmentLayer',
   'addLightLayer',
@@ -481,7 +482,8 @@ AECreateContext.effectWorkflowLibrary = function () {
       'Create one carrier solid above footage and apply the particle/generator effect to that carrier.',
       'Use ADD or SCREEN when the effect should overlay the original video.',
       'Do not split one visual idea into several similar particle carrier layers by default; combine body, trail, glow, and spark accents into the fewest effect instances the plugin can support.',
-      'Use light/null helpers only when the user asks for explicit helper control or the plugin workflow requires them.'
+      'Use light/null helpers only when the user asks for explicit helper control or the plugin workflow requires them.',
+      'If the visual goal says particles should come from an existing color, edge, matte, blade edge, UI glow, or keyed region, consult the visual workflow library before generating actions; do not skip the keyed source/matte preparation step.'
     ],
     onlineResearch: {
       status: 'optional',
@@ -546,6 +548,94 @@ AECreateContext.effectWorkflowLibrary = function () {
       'Prefer duplicating or precomping source footage when the edit should remain reversible.',
       'Do not default to adjustment layers for source timing effects.'
     ],
+    onlineResearch: {
+      status: 'optional',
+      preferredSources: ['official vendor documentation', 'official tutorials', 'high-quality workflow tutorials']
+    }
+  }];
+};
+
+AECreateContext.visualWorkflowLibrary = function () {
+  return [{
+    id: 'color-keyed-edge-particles',
+    label: 'Color-Keyed Edge Particles',
+    matchTokens: [
+      'edge color',
+      'blade edge',
+      'knife edge',
+      'color keyed particles',
+      'color selected particles',
+      'matte particles',
+      'keyed edge',
+      '扣色',
+      '边缘颜色',
+      '刀边缘',
+      '刀刃',
+      '选择颜色',
+      '取色',
+      '颜色粒子',
+      '粒子效果'
+    ],
+    goalType: 'visual-preprocess-plus-particle',
+    defaultPlugins: [{
+      role: 'matte-isolation',
+      preferredEffects: [
+        { name: 'Linear Color Key', matchName: 'ADBE Linear Color Key2' },
+        { name: 'Color Range', matchName: 'ADBE Color Range' },
+        { name: 'Keylight (1.2)', matchName: 'Keylight 906' },
+        { name: 'BCC Linear Color Key', matchName: 'BCC3Linear Color Key' }
+      ]
+    }, {
+      role: 'particle-carrier',
+      preferredEffects: [
+        { name: 'Trapcode Particular', matchName: 'tc Particular' }
+      ]
+    }, {
+      role: 'edge-bloom',
+      preferredEffects: [
+        { name: 'Deep Glow', matchName: 'PEDG' },
+        { name: 'Deep Glow 2', matchName: 'PEDG2' }
+      ],
+      optional: true
+    }],
+    layerPolicy: {
+      priority: 'minimum-layers-first',
+      defaultLayerCount: 2,
+      defaultEffectInstancesPerVisualGoal: 1,
+      optionalHelpersRequireExplicitRequest: true,
+      splitLayersOnlyWhen: [
+        'the keyed source must remain separate from the particle carrier',
+        'the user explicitly asks for separate layer control',
+        'the particle plugin cannot use the keyed layer as a layer emitter or layer map'
+      ]
+    },
+    requiredPlanningSteps: [{
+      id: 'sample-target-color',
+      description: 'Identify the visible source color or edge region that should drive the effect, such as a pink blade edge.'
+    }, {
+      id: 'duplicate-source-for-matte',
+      actionTypes: ['duplicateLayer'],
+      description: 'Duplicate the target footage or precomp into a non-destructive keyed source layer trimmed to the marker span.'
+    }, {
+      id: 'isolate-key-color',
+      actionTypes: ['addEffect', 'setProperty', 'setKeyframes', 'setLayerProperties'],
+      description: 'Apply a color key/range/matte cleanup effect to isolate the sampled edge color before building particles.'
+    }, {
+      id: 'create-particle-carrier',
+      actionTypes: ['addSolidLayer', 'addEffect', 'setProperty', 'setKeyframes'],
+      description: 'Create one ADD/SCREEN solid carrier for the particle plugin and place it above the footage.'
+    }, {
+      id: 'connect-matte-to-particles',
+      actionTypes: ['setProperty'],
+      description: 'When the particle plugin exposes a Layer/Layer RGB/Layer Emitter/Layer Map control, set that property from the keyed source layer reference; otherwise approximate with an emitter path placed on the keyed edge.'
+    }],
+    planningRules: [
+      'A request that says select/pick/key the existing color before particles must not be implemented as only manually positioned particles.',
+      'The keyed duplicate is a source/matte layer, not another similar particle layer; it may be hidden/guide/non-rendering when the downstream plugin can still read it.',
+      'Prefer one keyed source layer plus one particle carrier layer. Add glow on the particle carrier or keyed source only when needed for the requested look.',
+      'Expose the sampled color, key tolerance/softness, particle rate, emitter path, turbulence, life, size, and glow strength as user-editable parameters when practical.'
+    ],
+    recommendedActionTypes: ['duplicateLayer', 'addEffect', 'setProperty', 'setKeyframes', 'addSolidLayer', 'setLayerProperties'],
     onlineResearch: {
       status: 'optional',
       preferredSources: ['official vendor documentation', 'official tutorials', 'high-quality workflow tutorials']
@@ -979,8 +1069,13 @@ AECreateContext.exportContextData = function () {
     effectWorkflowLibraryPath: 'effect-workflows.json',
     pluginWorkflowLibrary: {
       schemaVersion: 1,
-      version: '2026-05-13',
+      version: '2026-05-14',
       entries: AECreateContext.effectWorkflowLibrary()
+    },
+    visualWorkflowLibrary: {
+      schemaVersion: 1,
+      version: '2026-05-14',
+      entries: AECreateContext.visualWorkflowLibrary()
     },
     supportedActionTypes: AECreateContext.supportedActionTypes,
     panelSettings: AECreateBridge.settings()

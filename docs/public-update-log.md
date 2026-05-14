@@ -38,6 +38,24 @@ This document is public-facing and safe to push. It records shipped updates, vis
 
 ## Update History / 更新记录
 
+### 2026-05-14 - Visual Workflow Planning For Keyed Edge Particles / 扣色边缘粒子视觉工作流
+
+Commit: pending
+
+中文：
+- 新增视觉目标 workflow 库，导出到 `current-context.json` 的 `visualWorkflowLibrary`，让 Codex 不只看插件参数，还能读取“视觉目标需要哪些前置步骤”。
+- 新增 `color-keyed-edge-particles` 工作流：当用户要求从已有颜色、刀刃边缘、边缘颜色或扣色区域生成粒子时，应先复制素材层做扣色源，再创建粒子承载层。
+- 扩展结构化动作协议，新增 `duplicateLayer`，支持非破坏性复制目标图层作为 matte/source 层。
+- `setProperty` 支持 `valueLayerRef`，可把同一模块里新建或复制的图层写入插件的 Layer Control 类参数。
+- 验证：`node --test`，60 项测试全部通过。
+
+English:
+- Added a visual-goal workflow library exported as `visualWorkflowLibrary` in `current-context.json`, so Codex can read required preprocessing steps instead of only plugin parameters.
+- Added the `color-keyed-edge-particles` workflow: requests based on an existing color, blade edge, edge color, or keyed region should duplicate the footage as a keyed source before creating the particle carrier.
+- Extended the structured action protocol with `duplicateLayer` for non-destructive matte/source layer duplication.
+- `setProperty` now supports `valueLayerRef`, allowing a plan to write a newly created or duplicated layer into plugin Layer Control parameters.
+- Verification: `node --test`, 60 tests passed.
+
 ### 2026-05-14 - Reusable Pending Plans / 可重复应用方案
 
 Commit: `7b62eb9`

@@ -12,6 +12,7 @@ AEcreate 是一个可停靠在 After Effects 里的 CEP 扩展面板，用来把
 - Applies checked modules inside an AE undo group.
 - Scans AE `.ffx` presets from user, install, and custom preset folders.
 - Scans installed AE effect plugin parameter trees into machine-readable JSON, including built-in workflow guidance.
+- Exports visual workflow guidance so Codex can plan preprocessing steps, such as duplicating a source layer for color keying before building edge-driven particles.
 - Provides plugin search suggestions in the panel, similar to AE Effects search.
 - Supports Chinese and English panel UI.
 
@@ -47,13 +48,14 @@ AEcreate currently supports these structured action types:
 - `setProperty`
 - `setKeyframes`
 - `setExpression`
+- `duplicateLayer`
 - `addSolidLayer`
 - `addAdjustmentLayer`
 - `addLightLayer`
 - `addNullLayer`
 - `setLayerProperties`
 
-Layer workflow actions can create carrier/control layers and then target later effect actions with `targetRef`. Plugin scans also write workflow guidance so Codex can choose source-layer, adjustment-layer, solid-carrier, light, or null helper flows instead of treating every plugin as a direct effect on the footage layer.
+Layer workflow actions can duplicate source layers, create carrier/control layers, and then target later effect actions with `targetRef`. `setProperty` can also use `valueLayerRef` when an effect parameter should point at a layer created earlier in the same module. Plugin and visual workflow guidance help Codex choose source-layer preprocessing, adjustment-layer, solid-carrier, light, null, or keyed-matte flows instead of treating every request as a direct effect on the footage layer.
 
 ## Install For Development
 

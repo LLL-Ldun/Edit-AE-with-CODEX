@@ -135,6 +135,8 @@
       'inPoint',
       'outPoint',
       'enabled',
+      'guideLayer',
+      'shy',
       'opacity',
       'blendingMode',
       'position',
@@ -161,6 +163,7 @@
     if (action.type === 'setExpression' && hasOwn(action, 'expression')) paths.push(['expression']);
     if (action.type === 'applyPreset' && hasOwn(action, 'path')) paths.push(['path']);
     if (
+      action.type === 'duplicateLayer' ||
       action.type === 'addSolidLayer' ||
       action.type === 'addAdjustmentLayer' ||
       action.type === 'addLightLayer' ||
@@ -250,6 +253,7 @@
     }
     if (action.ref || action.targetRef || action.layerRef) return { kind: 'layer', target: action.ref || action.targetRef || action.layerRef };
     if (
+      action.type === 'duplicateLayer' ||
       action.type === 'addSolidLayer' ||
       action.type === 'addAdjustmentLayer' ||
       action.type === 'addLightLayer' ||
@@ -286,6 +290,8 @@
       inPoint: 'paramFieldInPoint',
       outPoint: 'paramFieldOutPoint',
       enabled: 'paramFieldEnabled',
+      guideLayer: 'paramFieldGuideLayer',
+      shy: 'paramFieldShy',
       opacity: 'paramFieldOpacity',
       blendingMode: 'paramFieldBlendingMode',
       position: 'paramFieldPosition',

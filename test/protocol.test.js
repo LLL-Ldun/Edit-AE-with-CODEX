@@ -36,6 +36,7 @@ test('validatePendingAction accepts layer workflow actions', () => {
       summary: 'Creates a particle carrier above the footage and targets it.',
       checked: true,
       actions: [
+        { type: 'duplicateLayer', ref: 'edgeMatte', name: 'AEcreate edge matte', guideLayer: true },
         { type: 'addSolidLayer', ref: 'particles', name: 'AEcreate particles', color: [0, 0, 0] },
         { type: 'addAdjustmentLayer', ref: 'impactFx', name: 'AEcreate impact fx' },
         { type: 'addLightLayer', ref: 'emitter', name: 'AEcreate emitter', lightType: 'point', position: [640, 360, -200] },
@@ -111,7 +112,7 @@ test('validatePendingAction reports unsupported action type', () => {
 
   assert.ok(
     validatePendingAction(action).includes(
-      'modules[0].actions[0].type must be one of: addEffect, modifyEffect, applyPreset, setProperty, setKeyframes, setExpression, addSolidLayer, addAdjustmentLayer, addLightLayer, addNullLayer, setLayerProperties'
+      'modules[0].actions[0].type must be one of: addEffect, modifyEffect, applyPreset, setProperty, setKeyframes, setExpression, duplicateLayer, addSolidLayer, addAdjustmentLayer, addLightLayer, addNullLayer, setLayerProperties'
     )
   );
 });

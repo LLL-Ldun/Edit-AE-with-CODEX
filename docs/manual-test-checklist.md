@@ -24,12 +24,14 @@
 - [ ] Confirm the parameter JSON includes parameter display names, match names, value types, paths, current values, and keyframe/expression capability flags where AE exposes them.
 - [ ] Confirm the parameter JSON includes `hasMin`/`minValue` and `hasMax`/`maxValue` for ranged properties where AE exposes them.
 - [ ] Confirm the parameter JSON includes `workflow`, and that known particle/generator plugins prefer a solid carrier while known impact/glow/blur/glitch plugins prefer an adjustment layer.
+- [ ] Confirm `current-context.json` includes `visualWorkflowLibrary`, including the `color-keyed-edge-particles` workflow for requests that need keying or selecting an existing edge color before particle generation.
 - [ ] Confirm unknown plugins are marked with `workflow.layerStrategy: "unknown"` and include `onlineResearch.queries` for later official-doc/tutorial lookup.
 - [ ] Confirm the parameter JSON includes `pluginFiles` candidates for plugin binaries when matching files can be found locally.
 - [ ] Click `Scan All Plugins` only in a disposable test project, confirm the warning prompt appears, and confirm `<bridge-folder>/effect-scan-report.json` records scanned and failed plugins.
 - [ ] Add a test `pending-action.json` that applies a harmless preset or changes an existing effect property.
 - [ ] For a safe first apply test, copy `examples/pending-actions/opacity-pulse.json` to `<bridge-folder>/pending-action.json`, then set `target.layerIndex` and `contextFingerprint` to the values shown in `current-context.json`.
 - [ ] Confirm the pending plan appears with module checkboxes.
+- [ ] Confirm a test plan using `duplicateLayer` can duplicate the selected layer into a referenced matte/source layer, and a later `setProperty` can use `valueLayerRef` to point a plugin layer-control parameter at that duplicate.
 - [ ] Confirm pending plan target, warnings, requirements, and action counts are visible when provided.
 - [ ] Replace `pending-action.json` with a second plan, click `Refresh Plan`, and confirm the first plan remains visible under Plan History.
 - [ ] Click a Plan History item and confirm it is restored as the current pending plan.

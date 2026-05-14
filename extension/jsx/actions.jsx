@@ -257,6 +257,7 @@ AECreateActions.allowedActionTypes = [
   'setProperty',
   'setKeyframes',
   'setExpression',
+  'duplicateLayer',
   'addSolidLayer',
   'addAdjustmentLayer',
   'addLightLayer',
@@ -563,6 +564,12 @@ AECreateActions.resolveActionLayer = function (context, action) {
   return context.targetLayer;
 };
 
+AECreateActions.resolveLayerRef = function (context, ref) {
+  if (!AECreateActions.isNonEmptyString(ref)) return null;
+  if (!context.layersByRef || !context.layersByRef[ref]) AECreateBridge.fail('Layer ref not found: ' + ref);
+  return context.layersByRef[ref];
+};
+
 AECreateActions.numberOrDefault = function (value, fallback) {
   return typeof value === 'number' && isFinite(value) ? value : fallback;
 };
@@ -611,6 +618,8 @@ AECreateActions.applyLayerTiming = function (layer, action, comp) {
     layer.outPoint = outPoint;
   }
   if (typeof action.enabled === 'boolean') layer.enabled = action.enabled;
+  if (typeof action.guideLayer === 'boolean') layer.guideLayer = action.guideLayer;
+  if (typeof action.shy === 'boolean') layer.shy = action.shy;
 };
 
 AECreateActions.setNativeLayerProperty = function (layer, groupName, propertyName, value) {
@@ -650,6 +659,19 @@ AECreateActions.addSolidLayer = function (context, action) {
   var duration = AECreateActions.numberOrDefault(action.duration, comp.duration);
   var layer = comp.layers.addSolid(color, name, width, height, pixelAspect, duration);
   AECreateActions.applyLayerTiming(layer, action, comp);
+  AECreateActions.applyLayerComposite(layer, action);
+  AECreateActions.applyLayerPlacement(context, layer, action);
+  AECreateActions.rememberLayerRef(context, action, layer);
+  return layer;
+};
+
+AECreateActions.duplicateLayer = function (context, action) {
+  var sourceLayer = AECreateActions.resolveLayerRef(context, action.sourceRef || action.sourceLayerRef) || context.targetLayer;
+  if (!sourceLayer || !sourceLayer.duplicate) AECreateBridge.fail('No duplicatable source layer available for duplicateLayer.');
+  var layer = sourceLayer.duplicate();
+  if (!layer) AECreateBridge.fail('Unable to duplicate source layer.');
+  if (action.name) layer.name = action.name;
+  AECreateActions.applyLayerTiming(layer, action, context.comp);
   AECreateActions.applyLayerComposite(layer, action);
   AECreateActions.applyLayerPlacement(context, layer, action);
   AECreateActions.rememberLayerRef(context, action, layer);
@@ -727,6 +749,10 @@ AECreateActions.applyAction = function (contextOrLayer, action) {
     AECreateActions.addSolidLayer(context, action);
     return;
   }
+  if (action.type === 'duplicateLayer') {
+    AECreateActions.duplicateLayer(context, action);
+    return;
+  }
   if (action.type === 'addAdjustmentLayer') {
     AECreateActions.addAdjustmentLayer(context, action);
     return;
@@ -753,7 +779,7 @@ AECreateActions.applyAction = function (contextOrLayer, action) {
     return;
   }
   if (action.type === 'setProperty') {
-    AECreateActions.setProperty(layer, action);
+    AECreateActions.setProperty(context, layer, action);
     return;
   }
   if (action.type === 'setKeyframes') {
@@ -765,7 +791,7 @@ AECreateActions.applyAction = function (contextOrLayer, action) {
     return;
   }
   if (action.type === 'modifyEffect') {
-    AECreateActions.applyModifyEffect(layer, action);
+    AECreateActions.applyModifyEffect(context, layer, action);
     return;
   }
   throw new Error('Unsupported action type: ' + action.type);
@@ -787,11 +813,18 @@ AECreateActions.applyPreset = function (layer, action) {
   layer.applyPreset(preset);
 };
 
-AECreateActions.setProperty = function (layer, action) {
+AECreateActions.setProperty = function (context, layer, action) {
   AECreateActions.requirePropertyPath(action);
-  if (!AECreateActions.hasField(action, 'value')) AECreateBridge.fail('setProperty requires value.');
+  if (!AECreateActions.hasField(action, 'value') && !AECreateActions.isNonEmptyString(action.valueLayerRef)) {
+    AECreateBridge.fail('setProperty requires value or valueLayerRef.');
+  }
   var prop = AECreateActions.findEffectProperty(layer, action.effectMatchName, action.propertyPath);
-  prop.setValue(action.value);
+  var value = action.value;
+  if (AECreateActions.isNonEmptyString(action.valueLayerRef)) {
+    var refLayer = AECreateActions.resolveLayerRef(context, action.valueLayerRef);
+    value = refLayer.index;
+  }
+  prop.setValue(value);
 };
 
 AECreateActions.setKeyframes = function (layer, action) {
@@ -814,12 +847,12 @@ AECreateActions.setExpression = function (layer, action) {
   prop.expressionEnabled = true;
 };
 
-AECreateActions.applyModifyEffect = function (layer, action) {
+AECreateActions.applyModifyEffect = function (context, layer, action) {
   if (action.keys instanceof Array) {
     AECreateActions.setKeyframes(layer, action);
     return;
   }
-  AECreateActions.setProperty(layer, action);
+  AECreateActions.setProperty(context, layer, action);
 };
 
 AECreateActions.findEffectProperty = function (layer, effectMatchName, propertyPath) {
