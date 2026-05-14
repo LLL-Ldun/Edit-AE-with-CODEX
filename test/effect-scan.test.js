@@ -229,9 +229,85 @@ test('visualWorkflowLibrary teaches color-keyed edge particles as a preprocess-p
   assert.equal(keyedParticles.layerPolicy.priority, 'minimum-layers-first');
   assert.equal(keyedParticles.layerPolicy.defaultLayerCount, 2);
   assert.ok(keyedParticles.matchTokens.includes('刀刃'));
+  assert.ok(Array.isArray(keyedParticles.parameterGroups));
+  assert.ok(keyedParticles.parameterGroups.includes('keyed-matte-source'));
   assert.ok(keyedParticles.recommendedActionTypes.includes('duplicateLayer'));
   assert.ok(keyedParticles.requiredPlanningSteps.map((step) => step.id).includes('isolate-key-color'));
   assert.ok(keyedParticles.requiredPlanningSteps.map((step) => step.id).includes('connect-matte-to-particles'));
+});
+
+test('pluginWorkflow includes tutorial-derived plugin usage families', () => {
+  const helpers = loadContextHelpers();
+  const scenarios = [{
+    effect: { name: 'Saber', matchName: 'Saber', category: 'Video Copilot' },
+    id: 'saber-path-glow',
+    strategy: 'solidCarrier',
+    group: 'path-or-mask-source'
+  }, {
+    effect: { name: 'Optical Flares', matchName: 'Optical Flares', category: 'Video Copilot' },
+    id: 'optical-flares-hit-feedback',
+    strategy: 'solidCarrier',
+    group: 'flare-position'
+  }, {
+    effect: { name: 'BCC Ripple Dissolve', matchName: 'BCC Ripple Dissolve', category: 'Boris FX' },
+    id: 'ripple-dissolve-adjustment',
+    strategy: 'adjustmentLayer',
+    group: 'dissolve-progress'
+  }, {
+    effect: { name: 'Depth Map ML', matchName: 'Depth Map ML', category: 'AI Depth' },
+    id: 'depth-map-source-preprocess',
+    strategy: 'sourceLayer',
+    group: 'depth-map-output'
+  }, {
+    effect: { name: 'BCC Two Way Key', matchName: 'BCC Two Way Key', category: 'Boris FX Key' },
+    id: 'matte-key-source-preprocess',
+    strategy: 'sourceLayer',
+    group: 'matte-isolation'
+  }, {
+    effect: { name: '3D Stroke', matchName: '3D Stroke', category: 'Trapcode' },
+    id: 'path-stroke-carrier',
+    strategy: 'solidCarrier',
+    group: 'path-stroke'
+  }];
+
+  for (const scenario of scenarios) {
+    const workflow = helpers.pluginWorkflow(scenario.effect);
+    assert.equal(workflow.id, scenario.id);
+    assert.equal(workflow.layerStrategy, scenario.strategy);
+    assert.equal(workflow.layerPolicy.priority, 'minimum-layers-first');
+    assert.equal(workflow.layerPolicy.defaultEffectInstancesPerVisualGoal, 1);
+    assert.ok(workflow.parameterGroups.includes(scenario.group));
+  }
+});
+
+test('visualWorkflowLibrary exposes tutorial-derived visual workflow families', () => {
+  const helpers = loadContextHelpers();
+  const workflows = helpers.visualWorkflowLibrary();
+  const ids = workflows.map((entry) => entry.id);
+  const expected = [
+    'color-keyed-edge-particles',
+    'short-impact-adjustment-stack',
+    'retime-twixtor-speed-ramp',
+    'saber-path-glow',
+    'optical-flares-hit-feedback',
+    'ripple-dissolve-adjustment',
+    'depth-map-smoke-composite',
+    'tracked-light-or-overlay',
+    'texture-plasma-glow-overlay',
+    'transition-preset-two-shot'
+  ];
+
+  for (const id of expected) {
+    assert.ok(ids.includes(id), `missing visual workflow ${id}`);
+    const workflow = workflows.find((entry) => entry.id === id);
+    assert.equal(workflow.layerPolicy.priority, 'minimum-layers-first');
+    assert.ok(Array.isArray(workflow.requiredPlanningSteps));
+    assert.ok(workflow.requiredPlanningSteps.length > 0);
+    assert.ok(Array.isArray(workflow.parameterGroups));
+    assert.ok(workflow.parameterGroups.length > 0);
+    assert.ok(Array.isArray(workflow.planningRules));
+    assert.ok(workflow.planningRules.length > 0);
+  }
 });
 
 test('supportedActionTypes includes duplicateLayer for non-destructive keyed sources', () => {

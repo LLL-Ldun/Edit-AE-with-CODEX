@@ -194,6 +194,10 @@ Required top-level fields:
   "compMarkers": [],
   "availableEffects": [],
   "presetCachePath": "preset-cache.json",
+  "effectWorkflowLibraryPath": "effect-workflows.json",
+  "pluginWorkflowLibrary": {},
+  "visualWorkflowLibrary": {},
+  "supportedActionTypes": [],
   "contextFingerprint": "fingerprint-of-current-context",
   "panelSettings": {}
 }
@@ -220,6 +224,8 @@ Effect records include:
 - expressions
 
 The property tree is essential because Codex must be able to modify existing plugins, not only add new ones.
+
+Workflow metadata is also part of the exported context, not a side document. `pluginWorkflowLibrary` describes how plugin families should be used inside AE, such as source-layer retime, adjustment-layer impact, solid-carrier particles, path glow, flare hits, key/matte preprocessors, and unknown-plugin research. `visualWorkflowLibrary` describes visual goals that may require several ordered steps before a plugin can work correctly, such as keying an existing blade edge before building particles from it. `supportedActionTypes` lets Codex generate only actions that the installed panel can execute.
 
 ### preset-cache.json
 
@@ -274,20 +280,24 @@ Each module includes:
 
 Supported action types:
 
+- `duplicateLayer`
+- `addSolidLayer`
+- `addAdjustmentLayer`
+- `addLightLayer`
+- `addNullLayer`
 - `addEffect`
 - `modifyEffect`
 - `applyPreset`
 - `setProperty`
 - `setKeyframes`
 - `setExpression`
+- `setLayerProperties`
 
 Later structured action candidates:
 
-- `addAdjustmentLayer`
 - `addMarker`
 - `renameLayer`
-- `setBlendMode`
-- `setOpacity`
+- convenience shorthands for blend mode and opacity
 
 The action format should prefer structured operations over raw script whenever possible. Raw JSX can exist as an escape hatch, but structured actions make summaries, validation, partial execution, and future UI editing easier.
 
@@ -295,7 +305,7 @@ The action format should prefer structured operations over raw script whenever p
 
 The system must not be limited to specific plugins.
 
-V1 should support three levels of plugin control:
+V1 should support four levels of plugin control:
 
 ### Level 1: Preset-Based Support
 
@@ -335,6 +345,42 @@ Future adapters:
 - any frequently used user plugin
 
 Adapters are convenience layers, not hard requirements. If no adapter exists, Codex can still use the property tree and presets.
+
+### Level 4: Workflow Libraries
+
+Parameter trees answer "what controls exist"; workflow libraries answer "how this kind of effect should be built in AE." They are core tool capability and must be exported with context.
+
+The plugin capability library classifies installed effects by display name, match name, and category. Built-in families include:
+
+- particle and generator effects on a solid carrier
+- short impact, glow, blur, shake, color, and glitch stacks on an adjustment layer
+- source-layer retime and interpolation effects
+- Saber-style path glow on a solid carrier
+- Optical Flares-style hit feedback on an additive carrier
+- BCC ripple dissolve on a trimmed adjustment layer
+- depth-map extraction as source or matte preprocessing
+- key/matte plugins as source preprocessing
+- path or stroke generators on a carrier layer
+- unknown plugins marked for future official-doc or tutorial research
+
+The visual-goal workflow library sits above individual plugins. It describes workflows such as:
+
+- color-keyed edge particles
+- short impact adjustment stacks
+- Twixtor-style speed ramps
+- Saber path glow
+- flare hit feedback
+- ripple dissolve transitions
+- depth-map smoke composites
+- tracked light or overlay effects
+- texture/plasma glow overlays
+- two-shot preset transitions
+
+Each workflow entry must include match tokens, default plugin roles, required planning steps, editable parameter groups, a minimum-layer policy, recommended structured action types, and rules for when helper layers are allowed.
+
+The default planning constraint is minimum layers first. One visual goal should not automatically become several similar solid, adjustment, light, or null layers. Extra layers are allowed only when timing, masking, blend scope, source preservation, tracking, or a plugin's actual workflow requires them.
+
+When a scanned plugin or requested visual goal is not in the built-in library, Codex should preserve the scanned parameter tree, mark the workflow as unknown or incomplete, and use official vendor documentation, official tutorials, or high-quality tutorials before promoting a new rule into the built-in library.
 
 ## Natural Language Editing Requirements
 

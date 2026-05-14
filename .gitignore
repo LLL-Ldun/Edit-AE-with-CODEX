@@ -21,6 +21,7 @@ ae-codex-bridge/
 
 # Private local project notes.
 docs/private-*.md
+docs/private-*/
 
 # OS/editor noise
 .DS_Store

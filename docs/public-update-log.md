@@ -38,6 +38,24 @@ This document is public-facing and safe to push. It records shipped updates, vis
 
 ## Update History / 更新记录
 
+### 2026-05-14 - Tutorial-Derived Workflow Library / 教程提炼 workflow 库
+
+Commit: `fc9c690`
+
+中文：
+- 将 workflow 能力合并进完整设计，明确它是工具核心上下文能力，不是单独的 Particular 示例或临时说明。
+- 扩展插件能力 workflow：新增 Saber 路径光、Optical Flares 击中光斑、BCC Ripple Dissolve、Depth Map 预处理、Key/Matte 预处理、3D Stroke/路径描边等内置插件族。
+- 扩展视觉目标 workflow：新增短促冲击调整层、Twixtor 速度坡、Saber 路径光、光斑反馈、波纹溶解、深度烟雾、跟踪光效、纹理/等离子叠加、两段镜头转场等第一批教程提炼规则。
+- 每个 workflow 条目现在都强调最少图层优先、必需规划步骤、可编辑参数组、推荐结构化动作和拆层条件，避免同一个视觉目标默认堆叠多个相似层。
+- 文档同步：更新完整设计、workflow 库说明和 AE 手动测试清单。
+
+English:
+- Merged workflow capability into the complete design as core context metadata, not as a standalone Particular note or temporary example.
+- Expanded plugin workflows with built-in families for Saber path glow, Optical Flares hit feedback, BCC Ripple Dissolve, Depth Map preprocessing, key/matte preprocessing, and 3D Stroke/path carriers.
+- Expanded visual-goal workflows with tutorial-derived rules for short impact stacks, Twixtor speed ramps, Saber path glow, flare hits, ripple dissolves, depth-map smoke composites, tracked overlays, texture/plasma overlays, and two-shot preset transitions.
+- Each workflow now emphasizes minimum layers first, required planning steps, editable parameter groups, recommended structured actions, and split-layer conditions.
+- Documentation updated: complete design, workflow library notes, and the AE manual test checklist.
+
 ### 2026-05-14 - Visual Workflow Planning For Keyed Edge Particles / 扣色边缘粒子视觉工作流
 
 Commit: `901a8c8`

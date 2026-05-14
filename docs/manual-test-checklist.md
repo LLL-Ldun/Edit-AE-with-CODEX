@@ -25,6 +25,8 @@
 - [ ] Confirm the parameter JSON includes `hasMin`/`minValue` and `hasMax`/`maxValue` for ranged properties where AE exposes them.
 - [ ] Confirm the parameter JSON includes `workflow`, and that known particle/generator plugins prefer a solid carrier while known impact/glow/blur/glitch plugins prefer an adjustment layer.
 - [ ] Confirm `current-context.json` includes `visualWorkflowLibrary`, including the `color-keyed-edge-particles` workflow for requests that need keying or selecting an existing edge color before particle generation.
+- [ ] Confirm `current-context.json` includes the tutorial-derived visual workflow families: keyed edge particles, short impact adjustment stack, Twixtor speed ramp, Saber path glow, Optical Flares hit feedback, ripple dissolve, depth-map smoke composite, tracked overlay, texture/plasma overlay, and two-shot preset transition.
+- [ ] Confirm known plugin families infer specific workflows where available, such as Saber path glow, Optical Flares hit feedback, BCC Ripple Dissolve, Depth Map preprocessing, key/matte preprocessing, and 3D Stroke carrier workflows.
 - [ ] Confirm unknown plugins are marked with `workflow.layerStrategy: "unknown"` and include `onlineResearch.queries` for later official-doc/tutorial lookup.
 - [ ] Confirm the parameter JSON includes `pluginFiles` candidates for plugin binaries when matching files can be found locally.
 - [ ] Click `Scan All Plugins` only in a disposable test project, confirm the warning prompt appears, and confirm `<bridge-folder>/effect-scan-report.json` records scanned and failed plugins.

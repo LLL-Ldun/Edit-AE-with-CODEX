@@ -445,6 +445,212 @@ AECreateContext.supportedActionTypes = [
 
 AECreateContext.effectWorkflowLibrary = function () {
   return [{
+    id: 'saber-path-glow',
+    label: 'Saber Path Glow',
+    matchTokens: ['saber', 'video copilot saber'],
+    categoryTokens: ['video copilot', 'stylize', 'generate'],
+    layerStrategy: 'solidCarrier',
+    effectPlacement: 'carrierLayer',
+    layerPolicy: {
+      priority: 'minimum-layers-first',
+      defaultLayerCount: 1,
+      defaultEffectInstancesPerVisualGoal: 1,
+      optionalHelpersRequireExplicitRequest: true,
+      splitLayersOnlyWhen: [
+        'user explicitly asks for separate layer control',
+        'different masks or paths need independent timing',
+        'the glow body and secondary accent require incompatible blend or mask scopes'
+      ]
+    },
+    carrierLayer: {
+      type: 'solid',
+      color: [0, 0, 0],
+      blendModes: ['ADD', 'SCREEN'],
+      timing: 'marker-span'
+    },
+    helperLayers: [],
+    parameterGroups: ['path-or-mask-source', 'core-glow', 'start-end-offset', 'flicker', 'distortion', 'composite-blend'],
+    recommendedActionTypes: ['addSolidLayer', 'addEffect', 'setProperty', 'setKeyframes', 'setExpression', 'setLayerProperties'],
+    notes: [
+      'Apply Saber to one solid carrier and drive it from masks or text/path sources.',
+      'Animate start/end offset, glow intensity, flicker, and distortion around the marker instead of adding multiple similar Saber layers by default.'
+    ],
+    onlineResearch: {
+      status: 'optional',
+      preferredSources: ['official vendor documentation', 'official tutorials', 'high-quality workflow tutorials']
+    }
+  }, {
+    id: 'optical-flares-hit-feedback',
+    label: 'Optical Flares Hit Feedback',
+    matchTokens: ['optical flares', 'opticalflares', 'lens flare', 'flare'],
+    categoryTokens: ['video copilot', 'light', 'generate'],
+    layerStrategy: 'solidCarrier',
+    effectPlacement: 'carrierLayer',
+    layerPolicy: {
+      priority: 'minimum-layers-first',
+      defaultLayerCount: 1,
+      defaultEffectInstancesPerVisualGoal: 1,
+      optionalHelpersRequireExplicitRequest: true,
+      splitLayersOnlyWhen: [
+        'user explicitly asks for separate layer control',
+        'different flare sources need independent timing',
+        'tracked 3D or null control is required'
+      ]
+    },
+    carrierLayer: {
+      type: 'solid',
+      color: [0, 0, 0],
+      blendModes: ['ADD', 'SCREEN'],
+      timing: 'marker-span'
+    },
+    helperLayers: [{
+      type: 'null',
+      purpose: 'optional flare position or tracking control',
+      optional: true
+    }],
+    parameterGroups: ['flare-position', 'brightness', 'scale', 'flicker', 'occlusion-or-mask', 'composite-blend'],
+    recommendedActionTypes: ['addSolidLayer', 'addEffect', 'setProperty', 'setKeyframes', 'setExpression', 'setLayerProperties'],
+    notes: [
+      'Use one additive solid carrier for lens flare hits and keyframe brightness/scale over a short marker span.',
+      'Use a null or tracking helper only when the flare must follow a moving source.'
+    ],
+    onlineResearch: {
+      status: 'optional',
+      preferredSources: ['official vendor documentation', 'official tutorials', 'high-quality workflow tutorials']
+    }
+  }, {
+    id: 'ripple-dissolve-adjustment',
+    label: 'Ripple Dissolve Adjustment',
+    matchTokens: ['ripple dissolve', 'bcc ripple dissolve', 'ripple', 'dissolve'],
+    categoryTokens: ['boris', 'bcc', 'transition', 'distort'],
+    layerStrategy: 'adjustmentLayer',
+    effectPlacement: 'adjustmentLayer',
+    layerPolicy: {
+      priority: 'minimum-layers-first',
+      defaultLayerCount: 1,
+      defaultEffectInstancesPerVisualGoal: 1,
+      optionalHelpersRequireExplicitRequest: true,
+      splitLayersOnlyWhen: [
+        'user explicitly asks for separate layer control',
+        'incoming and outgoing shots need different masks',
+        'two incompatible transition plugins must be isolated'
+      ]
+    },
+    carrierLayer: {
+      type: 'adjustment',
+      timing: 'transition-span'
+    },
+    helperLayers: [],
+    parameterGroups: ['dissolve-progress', 'ripple-height', 'wave-speed', 'edge-softness', 'mix-with-original'],
+    recommendedActionTypes: ['addAdjustmentLayer', 'addEffect', 'setProperty', 'setKeyframes', 'setExpression', 'setLayerProperties'],
+    notes: [
+      'Use a trimmed adjustment layer for ripple/dissolve transitions unless the plugin specifically requires source layers.',
+      'Expose progress, ripple amount, edge softness, and timing to the pending parameter preview.'
+    ],
+    onlineResearch: {
+      status: 'optional',
+      preferredSources: ['official vendor documentation', 'official tutorials', 'high-quality workflow tutorials']
+    }
+  }, {
+    id: 'depth-map-source-preprocess',
+    label: 'Depth Map Source Preprocess',
+    matchTokens: ['depth map', 'depthmap', 'depth scanner', 'depth matte', 'depth blur'],
+    categoryTokens: ['depth', 'ai', 'blur'],
+    layerStrategy: 'sourceLayer',
+    effectPlacement: 'sourceLayer',
+    layerPolicy: {
+      priority: 'minimum-layers-first',
+      defaultLayerCount: 0,
+      defaultEffectInstancesPerVisualGoal: 1,
+      optionalHelpersRequireExplicitRequest: true,
+      splitLayersOnlyWhen: [
+        'the depth map must be preserved as a separate matte source',
+        'the user explicitly asks for separate layer control',
+        'a downstream smoke, blur, or displacement effect needs an isolated depth reference'
+      ]
+    },
+    carrierLayer: null,
+    helperLayers: [],
+    parameterGroups: ['depth-map-output', 'depth-focus', 'foreground-background-separation', 'matte-softness'],
+    recommendedActionTypes: ['duplicateLayer', 'addEffect', 'setProperty', 'setKeyframes', 'setExpression', 'setLayerProperties'],
+    notes: [
+      'Prefer applying depth-map extraction to the source or a duplicate source layer.',
+      'Use a duplicate only when downstream effects need an isolated matte or when the original footage must remain untouched.'
+    ],
+    onlineResearch: {
+      status: 'optional',
+      preferredSources: ['official vendor documentation', 'official tutorials', 'high-quality workflow tutorials']
+    }
+  }, {
+    id: 'matte-key-source-preprocess',
+    label: 'Matte Key Source Preprocess',
+    matchTokens: ['two way key', 'linear color key', 'color key', 'keylight', 'color range', 'matte key'],
+    categoryTokens: ['key', 'matte', 'boris', 'bcc'],
+    layerStrategy: 'sourceLayer',
+    effectPlacement: 'sourceLayer',
+    layerPolicy: {
+      priority: 'minimum-layers-first',
+      defaultLayerCount: 0,
+      defaultEffectInstancesPerVisualGoal: 1,
+      optionalHelpersRequireExplicitRequest: true,
+      splitLayersOnlyWhen: [
+        'the keyed result must feed another layer or plugin',
+        'the original source must remain visually untouched',
+        'the user explicitly asks for separate matte control'
+      ]
+    },
+    carrierLayer: null,
+    helperLayers: [],
+    parameterGroups: ['matte-isolation', 'sample-color', 'tolerance', 'softness', 'spill-cleanup', 'alpha-output'],
+    recommendedActionTypes: ['duplicateLayer', 'addEffect', 'setProperty', 'setKeyframes', 'setLayerProperties'],
+    notes: [
+      'Use keying effects as source or matte preprocessors, not as final visual effects by themselves when the user asks for edge-driven particles or composites.',
+      'Keep sampled color, tolerance, softness, and matte cleanup editable.'
+    ],
+    onlineResearch: {
+      status: 'optional',
+      preferredSources: ['official vendor documentation', 'official tutorials', 'high-quality workflow tutorials']
+    }
+  }, {
+    id: 'path-stroke-carrier',
+    label: 'Path Stroke Carrier',
+    matchTokens: ['3d stroke', 'stroke', 'trapcode stroke', 'write on'],
+    categoryTokens: ['trapcode', 'generate', 'stylize'],
+    layerStrategy: 'solidCarrier',
+    effectPlacement: 'carrierLayer',
+    layerPolicy: {
+      priority: 'minimum-layers-first',
+      defaultLayerCount: 1,
+      defaultEffectInstancesPerVisualGoal: 1,
+      optionalHelpersRequireExplicitRequest: true,
+      splitLayersOnlyWhen: [
+        'user explicitly asks for separate layer control',
+        'separate paths need incompatible timing or colors',
+        'the stroke must be tracked by a helper path or null'
+      ]
+    },
+    carrierLayer: {
+      type: 'solid',
+      color: [0, 0, 0],
+      blendModes: ['ADD', 'SCREEN'],
+      timing: 'marker-span'
+    },
+    helperLayers: [{
+      type: 'null',
+      purpose: 'optional path or tracking control',
+      optional: true
+    }],
+    parameterGroups: ['path-stroke', 'stroke-width', 'taper', 'start-end-offset', 'color', 'glow-composite'],
+    recommendedActionTypes: ['addSolidLayer', 'addEffect', 'setProperty', 'setKeyframes', 'setExpression', 'setLayerProperties'],
+    notes: [
+      'Use one solid carrier for mask/path driven stroke effects.',
+      'Animate start/end and width around the marker; add tracking helpers only when the source motion requires them.'
+    ],
+    onlineResearch: {
+      status: 'optional',
+      preferredSources: ['official vendor documentation', 'official tutorials', 'high-quality workflow tutorials']
+    }
+  }, {
     id: 'particle-solid-carrier',
     label: 'Particle Solid Carrier',
     matchTokens: ['particular', 'particle', 'particles', 'stardust', 'form', 'plexus'],
@@ -477,6 +683,7 @@ AECreateContext.effectWorkflowLibrary = function () {
       purpose: 'position-or-expression-control',
       optional: true
     }],
+    parameterGroups: ['emitter-position', 'particle-rate', 'particle-life', 'particle-size', 'velocity', 'turbulence', 'color-over-life', 'aux-system-or-trails', 'glow-composite'],
     recommendedActionTypes: ['addSolidLayer', 'addEffect', 'setProperty', 'setKeyframes', 'setExpression', 'setLayerProperties'],
     notes: [
       'Create one carrier solid above footage and apply the particle/generator effect to that carrier.',
@@ -512,6 +719,7 @@ AECreateContext.effectWorkflowLibrary = function () {
       timing: 'marker-span'
     },
     helperLayers: [],
+    parameterGroups: ['impact-time', 'amount', 'decay', 'blur', 'glow', 'color', 'shake'],
     recommendedActionTypes: ['addAdjustmentLayer', 'addEffect', 'setProperty', 'setKeyframes', 'setExpression', 'setLayerProperties'],
     notes: [
       'Create a trimmed adjustment layer above the footage for non-destructive impact, glow, blur, shake, color, or glitch effects.',
@@ -542,6 +750,7 @@ AECreateContext.effectWorkflowLibrary = function () {
     },
     carrierLayer: null,
     helperLayers: [],
+    parameterGroups: ['retime-speed', 'frame-interpolation', 'motion-vector-quality', 'source-frame-rate'],
     recommendedActionTypes: ['addEffect', 'setProperty', 'setKeyframes', 'setExpression'],
     notes: [
       'Apply retime effects to the footage/precomp layer being retimed.',
@@ -556,6 +765,27 @@ AECreateContext.effectWorkflowLibrary = function () {
 };
 
 AECreateContext.visualWorkflowLibrary = function () {
+  function minimumLayerPolicy(defaultLayerCount, splitLayersOnlyWhen) {
+    return {
+      priority: 'minimum-layers-first',
+      defaultLayerCount: defaultLayerCount,
+      defaultEffectInstancesPerVisualGoal: 1,
+      optionalHelpersRequireExplicitRequest: true,
+      splitLayersOnlyWhen: splitLayersOnlyWhen || [
+        'user explicitly asks for separate layer control',
+        'different timing, mask, blend mode, or compositing scope is required',
+        'the plugin cannot express the requested look in one effect instance'
+      ]
+    };
+  }
+
+  function optionalResearch() {
+    return {
+      status: 'optional',
+      preferredSources: ['official vendor documentation', 'official tutorials', 'high-quality workflow tutorials']
+    };
+  }
+
   return [{
     id: 'color-keyed-edge-particles',
     label: 'Color-Keyed Edge Particles',
@@ -598,17 +828,12 @@ AECreateContext.visualWorkflowLibrary = function () {
       ],
       optional: true
     }],
-    layerPolicy: {
-      priority: 'minimum-layers-first',
-      defaultLayerCount: 2,
-      defaultEffectInstancesPerVisualGoal: 1,
-      optionalHelpersRequireExplicitRequest: true,
-      splitLayersOnlyWhen: [
-        'the keyed source must remain separate from the particle carrier',
-        'the user explicitly asks for separate layer control',
-        'the particle plugin cannot use the keyed layer as a layer emitter or layer map'
-      ]
-    },
+    layerPolicy: minimumLayerPolicy(2, [
+      'the keyed source must remain separate from the particle carrier',
+      'the user explicitly asks for separate layer control',
+      'the particle plugin cannot use the keyed layer as a layer emitter or layer map'
+    ]),
+    parameterGroups: ['keyed-matte-source', 'sample-color', 'key-tolerance', 'matte-softness', 'particle-emitter', 'particle-life-size', 'turbulence', 'glow-composite'],
     requiredPlanningSteps: [{
       id: 'sample-target-color',
       description: 'Identify the visible source color or edge region that should drive the effect, such as a pink blade edge.'
@@ -636,10 +861,371 @@ AECreateContext.visualWorkflowLibrary = function () {
       'Expose the sampled color, key tolerance/softness, particle rate, emitter path, turbulence, life, size, and glow strength as user-editable parameters when practical.'
     ],
     recommendedActionTypes: ['duplicateLayer', 'addEffect', 'setProperty', 'setKeyframes', 'addSolidLayer', 'setLayerProperties'],
-    onlineResearch: {
-      status: 'optional',
-      preferredSources: ['official vendor documentation', 'official tutorials', 'high-quality workflow tutorials']
-    }
+    onlineResearch: optionalResearch()
+  }, {
+    id: 'short-impact-adjustment-stack',
+    label: 'Short Impact Adjustment Stack',
+    matchTokens: ['impact', 'hit', 'kill icon', 'shake', 'twitch', 'glow hit', '冲击', '击杀', '抖动', '卡点', '震动'],
+    goalType: 'marker-impact-adjustment',
+    defaultPlugins: [{
+      role: 'impact-distortion',
+      preferredEffects: [
+        { name: 'Twitch', matchName: 'Twitch' },
+        { name: 'S_Shake', matchName: 'S_Shake' }
+      ]
+    }, {
+      role: 'impact-glow-blur',
+      preferredEffects: [
+        { name: 'Deep Glow', matchName: 'PEDG' },
+        { name: 'RSMB', matchName: 'RSMB' }
+      ],
+      optional: true
+    }],
+    layerPolicy: minimumLayerPolicy(1, [
+      'user explicitly asks for separate layer control',
+      'glow/blur must be isolated from distortion timing',
+      'plugin order cannot express the requested stack on one adjustment layer'
+    ]),
+    parameterGroups: ['impact-time', 'shake-amount', 'rgb-split', 'blur-amount', 'glow-exposure', 'decay-frames'],
+    requiredPlanningSteps: [{
+      id: 'resolve-impact-marker',
+      actionTypes: ['setKeyframes'],
+      description: 'Resolve the marker time and keep the effect span short, usually a few frames before and after the hit.'
+    }, {
+      id: 'create-trimmed-adjustment',
+      actionTypes: ['addAdjustmentLayer', 'setLayerProperties'],
+      description: 'Create one trimmed adjustment layer for the hit stack unless the user asks for separated controls.'
+    }, {
+      id: 'keyframe-hit-decay',
+      actionTypes: ['addEffect', 'setProperty', 'setKeyframes'],
+      description: 'Keyframe intensity up at the marker and decay quickly so the impact feels sharp.'
+    }],
+    planningRules: [
+      'Prefer one adjustment layer for one short impact stack.',
+      'Make keyframes relative to the marker, not absolute timeline guesses.',
+      'Expose hit strength, decay length, blur, glow, and shake amount as editable parameters.'
+    ],
+    recommendedActionTypes: ['addAdjustmentLayer', 'addEffect', 'setProperty', 'setKeyframes', 'setLayerProperties'],
+    onlineResearch: optionalResearch()
+  }, {
+    id: 'retime-twixtor-speed-ramp',
+    label: 'Retime Twixtor Speed Ramp',
+    matchTokens: ['twixtor', 'speed ramp', 'retime', 'rewind', 'time remap', '变速', '回溯', '时间重映射', '补帧'],
+    goalType: 'source-retime',
+    defaultPlugins: [{
+      role: 'retime-interpolation',
+      preferredEffects: [
+        { name: 'Twixtor Pro', matchName: 'Twixtor Pro' },
+        { name: 'Twixtor', matchName: 'Twixtor' },
+        { name: 'Timewarp', matchName: 'ADBE Timewarp' }
+      ]
+    }],
+    layerPolicy: minimumLayerPolicy(0, [
+      'the retime needs a duplicate or precomp to remain reversible',
+      'different timing sections need independent source treatment',
+      'user explicitly asks for separate layer control'
+    ]),
+    parameterGroups: ['retime-speed', 'speed-keyframes', 'frame-interpolation', 'motion-vector-quality', 'source-frame-rate'],
+    requiredPlanningSteps: [{
+      id: 'identify-source-timing',
+      actionTypes: ['setKeyframes'],
+      description: 'Determine which footage/precomp layer owns the timing and where the ramp or rewind should begin and end.'
+    }, {
+      id: 'protect-source-if-needed',
+      actionTypes: ['duplicateLayer', 'setLayerProperties'],
+      description: 'Duplicate or precomp only when the edit must remain reversible or affects only one isolated beat.'
+    }, {
+      id: 'keyframe-retime-curve',
+      actionTypes: ['addEffect', 'setProperty', 'setKeyframes'],
+      description: 'Apply the retime effect to the source layer and keyframe speed or frame controls around the marker.'
+    }],
+    planningRules: [
+      'Do not use an adjustment layer for a plugin that changes source timing.',
+      'Tie speed changes to beat or kill-icon timing and keep keyframes editable.',
+      'Warn when the source frame rate or motion-vector quality is unknown.'
+    ],
+    recommendedActionTypes: ['duplicateLayer', 'addEffect', 'setProperty', 'setKeyframes', 'setLayerProperties'],
+    onlineResearch: optionalResearch()
+  }, {
+    id: 'saber-path-glow',
+    label: 'Saber Path Glow',
+    matchTokens: ['saber', 'path glow', 'outline glow', 'energy stroke', '路径光', '描边发光', '能量线', '边缘光'],
+    goalType: 'path-or-mask-glow',
+    defaultPlugins: [{
+      role: 'path-glow',
+      preferredEffects: [
+        { name: 'Saber', matchName: 'Saber' }
+      ]
+    }],
+    layerPolicy: minimumLayerPolicy(1, [
+      'different paths need independent timing or colors',
+      'the user explicitly asks for separate layer control',
+      'the path must be tracked by an external helper'
+    ]),
+    parameterGroups: ['path-or-mask-source', 'glow-intensity', 'core-size', 'start-end-offset', 'flicker', 'distortion'],
+    requiredPlanningSteps: [{
+      id: 'choose-mask-or-text-path',
+      actionTypes: ['addSolidLayer'],
+      description: 'Choose whether the glow follows a mask, text outline, weapon edge, or hand-drawn path.'
+    }, {
+      id: 'create-saber-carrier',
+      actionTypes: ['addSolidLayer', 'addEffect', 'setLayerProperties'],
+      description: 'Create one additive solid carrier with Saber and the required mask/path source.'
+    }, {
+      id: 'animate-reveal-or-pulse',
+      actionTypes: ['setProperty', 'setKeyframes'],
+      description: 'Keyframe start/end offset, intensity, flicker, or distortion to match the visual beat.'
+    }],
+    planningRules: [
+      'Do not create multiple Saber layers for one path unless the colors or timings truly diverge.',
+      'Prefer mask/path controls over hand-placed glow when the target edge is clear.',
+      'Expose path source, intensity, core size, flicker, and reveal timing.'
+    ],
+    recommendedActionTypes: ['addSolidLayer', 'addEffect', 'setProperty', 'setKeyframes', 'setLayerProperties'],
+    onlineResearch: optionalResearch()
+  }, {
+    id: 'optical-flares-hit-feedback',
+    label: 'Optical Flares Hit Feedback',
+    matchTokens: ['optical flares', 'lens flare', 'flare hit', 'light hit', '光晕', '镜头光斑', '爆闪', '击中光'],
+    goalType: 'flare-hit-feedback',
+    defaultPlugins: [{
+      role: 'flare-feedback',
+      preferredEffects: [
+        { name: 'Optical Flares', matchName: 'Optical Flares' }
+      ]
+    }],
+    layerPolicy: minimumLayerPolicy(1, [
+      'tracked flare position requires a null or tracked layer',
+      'different flare sources need independent timing',
+      'user explicitly asks for separate layer control'
+    ]),
+    parameterGroups: ['flare-position', 'brightness', 'scale', 'flicker', 'occlusion', 'blend-mode'],
+    requiredPlanningSteps: [{
+      id: 'resolve-flare-source',
+      actionTypes: ['addSolidLayer'],
+      description: 'Choose a source point such as muzzle flash, hit icon, weapon edge, or UI highlight.'
+    }, {
+      id: 'create-flare-carrier',
+      actionTypes: ['addSolidLayer', 'addEffect', 'setLayerProperties'],
+      description: 'Create one additive solid carrier for the flare effect.'
+    }, {
+      id: 'keyframe-flare-decay',
+      actionTypes: ['setProperty', 'setKeyframes'],
+      description: 'Keyframe brightness and scale with a fast rise and short decay around the marker.'
+    }],
+    planningRules: [
+      'Use one flare carrier for one hit unless there are multiple independently tracked sources.',
+      'Use tracking/null helpers only when the source moves noticeably.',
+      'Expose position, brightness, scale, flicker, and decay length.'
+    ],
+    recommendedActionTypes: ['addSolidLayer', 'addEffect', 'setProperty', 'setKeyframes', 'setLayerProperties'],
+    onlineResearch: optionalResearch()
+  }, {
+    id: 'ripple-dissolve-adjustment',
+    label: 'Ripple Dissolve Adjustment',
+    matchTokens: ['ripple dissolve', 'water dissolve', 'wave dissolve', 'transition ripple', '波纹溶解', '涟漪转场', '水波转场'],
+    goalType: 'adjustment-transition',
+    defaultPlugins: [{
+      role: 'ripple-dissolve',
+      preferredEffects: [
+        { name: 'BCC Ripple Dissolve', matchName: 'BCC Ripple Dissolve' },
+        { name: 'Ripple', matchName: 'ADBE Ripple' }
+      ]
+    }],
+    layerPolicy: minimumLayerPolicy(1, [
+      'incoming and outgoing shots need independent masks',
+      'plugin order cannot express the requested dissolve on one adjustment layer',
+      'user explicitly asks for separate layer control'
+    ]),
+    parameterGroups: ['dissolve-progress', 'ripple-height', 'wave-speed', 'edge-softness', 'transition-span'],
+    requiredPlanningSteps: [{
+      id: 'resolve-transition-span',
+      actionTypes: ['setLayerProperties'],
+      description: 'Resolve the cut or marker span that the dissolve should cover.'
+    }, {
+      id: 'create-transition-adjustment',
+      actionTypes: ['addAdjustmentLayer', 'addEffect'],
+      description: 'Create one trimmed adjustment layer over the transition span.'
+    }, {
+      id: 'animate-dissolve-progress',
+      actionTypes: ['setProperty', 'setKeyframes'],
+      description: 'Animate progress, ripple amount, wave speed, and edge softness through the transition.'
+    }],
+    planningRules: [
+      'Use an adjustment layer unless the plugin requires source-layer treatment.',
+      'Keep transition progress editable and avoid hard-coded absolute times.',
+      'Do not stack several dissolve layers for one cut by default.'
+    ],
+    recommendedActionTypes: ['addAdjustmentLayer', 'addEffect', 'setProperty', 'setKeyframes', 'setLayerProperties'],
+    onlineResearch: optionalResearch()
+  }, {
+    id: 'depth-map-smoke-composite',
+    label: 'Depth Map Smoke Composite',
+    matchTokens: ['depth map smoke', 'depth smoke', 'fog depth', 'atmosphere depth', '景深烟雾', '深度烟雾', '雾气合成', '纵深'],
+    goalType: 'depth-matte-composite',
+    defaultPlugins: [{
+      role: 'depth-matte',
+      preferredEffects: [
+        { name: 'Depth Map ML', matchName: 'Depth Map ML' },
+        { name: 'Depth Scanner', matchName: 'Depth Scanner' }
+      ]
+    }, {
+      role: 'smoke-overlay',
+      preferredEffects: [
+        { name: 'Fractal Noise', matchName: 'ADBE Fractal Noise' },
+        { name: 'Turbulent Displace', matchName: 'ADBE Turbulent Displace' }
+      ]
+    }],
+    layerPolicy: minimumLayerPolicy(2, [
+      'the depth map must remain separate from the smoke layer',
+      'user explicitly asks for separate layer control',
+      'different foreground/background masks require separate composites'
+    ]),
+    parameterGroups: ['depth-map-output', 'fog-density', 'smoke-scale', 'turbulence', 'matte-softness', 'blend-mode'],
+    requiredPlanningSteps: [{
+      id: 'build-or-read-depth-matte',
+      actionTypes: ['duplicateLayer', 'addEffect', 'setLayerProperties'],
+      description: 'Create or reuse a depth matte source if the effect must respect foreground/background separation.'
+    }, {
+      id: 'create-smoke-composite-layer',
+      actionTypes: ['addSolidLayer', 'addEffect', 'setLayerProperties'],
+      description: 'Create one smoke/fog carrier that can use the depth matte as a map or matte reference.'
+    }, {
+      id: 'animate-atmosphere',
+      actionTypes: ['setProperty', 'setKeyframes', 'setExpression'],
+      description: 'Control density, drift, turbulence, and matte softness over the requested span.'
+    }],
+    planningRules: [
+      'Use the depth matte as a source/helper layer, not another final visual layer.',
+      'Prefer one smoke composite layer unless foreground and background need independent timings.',
+      'Expose depth strength, fog density, turbulence, and matte softness.'
+    ],
+    recommendedActionTypes: ['duplicateLayer', 'addSolidLayer', 'addEffect', 'setProperty', 'setKeyframes', 'setExpression', 'setLayerProperties'],
+    onlineResearch: optionalResearch()
+  }, {
+    id: 'tracked-light-or-overlay',
+    label: 'Tracked Light Or Overlay',
+    matchTokens: ['track light', 'tracked overlay', 'motion track', 'follow target', '跟踪光', '跟随光', '跟踪叠加', '运动跟踪'],
+    goalType: 'tracked-overlay',
+    defaultPlugins: [{
+      role: 'tracking-control',
+      preferredEffects: [
+        { name: 'Tracker', matchName: 'ADBE Tracker' }
+      ]
+    }, {
+      role: 'light-or-overlay',
+      preferredEffects: [
+        { name: 'Optical Flares', matchName: 'Optical Flares' },
+        { name: 'Deep Glow', matchName: 'PEDG' }
+      ]
+    }],
+    layerPolicy: minimumLayerPolicy(2, [
+      'a null is required to hold tracking data',
+      'the overlay must be independently transformable',
+      'user explicitly asks for separate layer control'
+    ]),
+    parameterGroups: ['track-source', 'track-position', 'overlay-position', 'brightness', 'scale', 'decay'],
+    requiredPlanningSteps: [{
+      id: 'choose-track-feature',
+      actionTypes: ['addNullLayer'],
+      description: 'Identify the feature or layer that should drive the overlay position.'
+    }, {
+      id: 'create-track-control',
+      actionTypes: ['addNullLayer', 'setExpression', 'setLayerProperties'],
+      description: 'Create a null or reuse tracking data only when the overlay must follow motion.'
+    }, {
+      id: 'attach-overlay',
+      actionTypes: ['addSolidLayer', 'addEffect', 'setExpression', 'setKeyframes'],
+      description: 'Attach one light or overlay carrier to the track control and keyframe intensity around the marker.'
+    }],
+    planningRules: [
+      'Do not add a null when the target is static or the user only needs a one-frame hit.',
+      'Use a tracking helper only when it reduces manual per-frame positioning.',
+      'Expose track source, overlay position, brightness, scale, and timing.'
+    ],
+    recommendedActionTypes: ['addNullLayer', 'addSolidLayer', 'addEffect', 'setExpression', 'setProperty', 'setKeyframes', 'setLayerProperties'],
+    onlineResearch: optionalResearch()
+  }, {
+    id: 'texture-plasma-glow-overlay',
+    label: 'Texture Plasma Glow Overlay',
+    matchTokens: ['plasma glow', 'texture glow', 'energy texture', 'fractal glow', '纹理发光', '能量纹理', '等离子', '火焰纹理'],
+    goalType: 'generator-overlay',
+    defaultPlugins: [{
+      role: 'texture-generator',
+      preferredEffects: [
+        { name: 'Fractal Noise', matchName: 'ADBE Fractal Noise' },
+        { name: 'Turbulent Noise', matchName: 'ADBE Turbulent Noise' }
+      ]
+    }, {
+      role: 'glow-composite',
+      preferredEffects: [
+        { name: 'Deep Glow', matchName: 'PEDG' },
+        { name: 'Glow', matchName: 'ADBE Glow' }
+      ]
+    }],
+    layerPolicy: minimumLayerPolicy(1, [
+      'the texture must be separately matted or tracked',
+      'user explicitly asks for separate layer control',
+      'the generator and glow require incompatible masks or timing'
+    ]),
+    parameterGroups: ['noise-scale', 'evolution', 'color-map', 'glow-strength', 'mask-or-matte', 'blend-mode'],
+    requiredPlanningSteps: [{
+      id: 'create-texture-carrier',
+      actionTypes: ['addSolidLayer', 'addEffect', 'setLayerProperties'],
+      description: 'Create one overlay carrier for texture generation and glow.'
+    }, {
+      id: 'shape-overlay-scope',
+      actionTypes: ['setProperty', 'setExpression'],
+      description: 'Limit the overlay with masks, matte references, or blend settings when needed.'
+    }, {
+      id: 'animate-energy-motion',
+      actionTypes: ['setProperty', 'setKeyframes', 'setExpression'],
+      description: 'Animate evolution, scale, color, and glow strength over the marker span.'
+    }],
+    planningRules: [
+      'Combine generator and glow on one carrier when the same scope and timing are enough.',
+      'Use masks or matte references instead of adding duplicate texture layers by default.',
+      'Expose noise scale, evolution speed, color, glow, and blend mode.'
+    ],
+    recommendedActionTypes: ['addSolidLayer', 'addEffect', 'setProperty', 'setKeyframes', 'setExpression', 'setLayerProperties'],
+    onlineResearch: optionalResearch()
+  }, {
+    id: 'transition-preset-two-shot',
+    label: 'Transition Preset Two Shot',
+    matchTokens: ['transition preset', 'two shot transition', 'cut transition', 'preset transition', '转场预设', '两段转场', '镜头衔接', '预设转场'],
+    goalType: 'two-shot-transition',
+    defaultPlugins: [{
+      role: 'preset-or-effect-stack',
+      preferredEffects: [
+        { name: 'User Preset', matchName: 'ffx' }
+      ]
+    }],
+    layerPolicy: minimumLayerPolicy(1, [
+      'incoming and outgoing shots need independent source treatment',
+      'the preset contains source-layer effects that cannot live on one adjustment layer',
+      'user explicitly asks for separate layer control'
+    ]),
+    parameterGroups: ['cut-time', 'transition-duration', 'preset-path', 'strength', 'motion-blur', 'glow-or-distortion'],
+    requiredPlanningSteps: [{
+      id: 'resolve-cut-and-shots',
+      actionTypes: ['setLayerProperties'],
+      description: 'Resolve the outgoing shot, incoming shot, and cut or marker span.'
+    }, {
+      id: 'choose-preset-or-stack',
+      actionTypes: ['applyPreset', 'addAdjustmentLayer'],
+      description: 'Choose a scanned preset or build a small adjustment-layer stack based on the requested look.'
+    }, {
+      id: 'expose-transition-controls',
+      actionTypes: ['setProperty', 'setKeyframes'],
+      description: 'Expose duration, strength, blur, glow, and distortion controls before applying.'
+    }],
+    planningRules: [
+      'Use scanned presets when the user asks for a known saved look.',
+      'Keep the transition span explicit and editable.',
+      'Do not overwrite source timing unless the transition requires source-layer retime.'
+    ],
+    recommendedActionTypes: ['addAdjustmentLayer', 'applyPreset', 'addEffect', 'setProperty', 'setKeyframes', 'setLayerProperties'],
+    onlineResearch: optionalResearch()
   }];
 };
 
@@ -749,7 +1335,7 @@ AECreateContext.effectWorkflowCatalog = function (effects) {
   }
   return {
     schemaVersion: 1,
-    version: '2026-05-13',
+    version: '2026-05-14',
     generatedAt: new Date().toString(),
     effects: output
   };
