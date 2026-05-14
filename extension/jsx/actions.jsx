@@ -247,6 +247,11 @@ AECreateActions.moduleIsChecked = function (module, checkedMap, index) {
   return checkedMap[index] === true;
 };
 
+AECreateActions.pendingPlanFromPayload = function (payload) {
+  if (payload && payload.plan && typeof payload.plan === 'object' && !(payload.plan instanceof Array)) return payload.plan;
+  return AECreateActions.readPendingPlan();
+};
+
 AECreateActions.validateTargetLayerIndex = function (pending, comp) {
   if (!pending.target || !AECreateActions.isPositiveInteger(pending.target.layerIndex)) {
     return { ok: false, error: 'Pending action target layerIndex must be a positive integer. Requested index: ' + (pending.target ? pending.target.layerIndex : 'missing') + ', comp.numLayers: ' + comp.numLayers + '.' };
@@ -315,7 +320,7 @@ AECreateBridge.applyCheckedModules = function (payloadText) {
   try {
     var payload = AECreateJSON.parse(payloadText || '{}');
     var checkedMap = AECreateActions.checkedMap(payload);
-    var pending = AECreateActions.readPendingPlan();
+    var pending = AECreateActions.pendingPlanFromPayload(payload);
     var expectedContextFingerprint = AECreateActions.currentContextFingerprint();
     AECreateActions.validatePendingActionOrFail(pending, expectedContextFingerprint);
 

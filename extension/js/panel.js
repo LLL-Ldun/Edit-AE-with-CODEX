@@ -84,6 +84,219 @@
     return text('pendingAppliedModules').replace('{modules}', names.join(', '));
   }
 
+  function hasOwn(object, key) {
+    return Object.prototype.hasOwnProperty.call(object, key);
+  }
+
+  function clonePlain(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function editableLayerFields(action) {
+    var fields = [];
+    [
+      'name',
+      'color',
+      'width',
+      'height',
+      'pixelAspect',
+      'duration',
+      'startTime',
+      'inPoint',
+      'outPoint',
+      'enabled',
+      'opacity',
+      'blendingMode',
+      'position',
+      'lightType',
+      'intensity'
+    ].forEach(function (field) {
+      if (hasOwn(action, field)) fields.push([field]);
+    });
+    return fields;
+  }
+
+  function editableParameterPaths(action) {
+    var paths = [];
+    if (!action || typeof action !== 'object') return paths;
+    if ((action.type === 'setProperty' || action.type === 'modifyEffect') && hasOwn(action, 'value')) {
+      paths.push(['value']);
+    }
+    if ((action.type === 'setKeyframes' || action.type === 'modifyEffect') && Array.isArray(action.keys)) {
+      action.keys.forEach(function (key, index) {
+        if (key && hasOwn(key, 'time')) paths.push(['keys', index, 'time']);
+        if (key && hasOwn(key, 'value')) paths.push(['keys', index, 'value']);
+      });
+    }
+    if (action.type === 'setExpression' && hasOwn(action, 'expression')) paths.push(['expression']);
+    if (action.type === 'applyPreset' && hasOwn(action, 'path')) paths.push(['path']);
+    if (
+      action.type === 'addSolidLayer' ||
+      action.type === 'addAdjustmentLayer' ||
+      action.type === 'addLightLayer' ||
+      action.type === 'addNullLayer' ||
+      action.type === 'setLayerProperties'
+    ) {
+      paths = paths.concat(editableLayerFields(action));
+    }
+    return paths;
+  }
+
+  function getPathValue(object, path) {
+    var cursor = object;
+    for (var i = 0; i < path.length; i++) {
+      if (cursor === undefined || cursor === null) return undefined;
+      cursor = cursor[path[i]];
+    }
+    return cursor;
+  }
+
+  function setPathValue(object, path, value) {
+    var cursor = object;
+    for (var i = 0; i < path.length - 1; i++) {
+      cursor = cursor[path[i]];
+      if (cursor === undefined || cursor === null) return;
+    }
+    cursor[path[path.length - 1]] = value;
+  }
+
+  function encodeParamPath(path) {
+    return path.join('.');
+  }
+
+  function decodeParamPath(value) {
+    if (!value) return [];
+    return value.split('.').map(function (part) {
+      return /^\d+$/.test(part) ? Number(part) : part;
+    });
+  }
+
+  function formatParamPath(path) {
+    var output = '';
+    path.forEach(function (part, index) {
+      if (typeof part === 'number') output += '[' + part + ']';
+      else output += (index === 0 ? '' : '.') + part;
+    });
+    return output;
+  }
+
+  function parameterValueText(value) {
+    if (value && typeof value === 'object') return JSON.stringify(value);
+    if (value === undefined || value === null) return '';
+    return String(value);
+  }
+
+  function parseParameterValue(raw, original) {
+    var textValue = String(raw);
+    var trimmed = textValue.replace(/^\s+|\s+$/g, '');
+    if (Array.isArray(original) || (original && typeof original === 'object')) {
+      return JSON.parse(trimmed);
+    }
+    if (typeof original === 'number') {
+      var numberValue = Number(trimmed);
+      if (!isFinite(numberValue)) throw new Error('Expected a number.');
+      return numberValue;
+    }
+    if (typeof original === 'boolean') {
+      if (/^(true|1)$/i.test(trimmed)) return true;
+      if (/^(false|0)$/i.test(trimmed)) return false;
+      throw new Error('Expected true or false.');
+    }
+    return textValue;
+  }
+
+  function actionTargetText(action) {
+    if (action.effectMatchName && action.propertyPath) {
+      return action.effectMatchName + ' > ' + action.propertyPath.join(' > ');
+    }
+    if (action.matchName || action.name) return action.matchName || action.name;
+    if (action.targetRef || action.layerRef) return action.targetRef || action.layerRef;
+    if (action.ref) return action.ref;
+    return action.type || 'action';
+  }
+
+  function parameterLabel(action, path) {
+    return actionTargetText(action) + ' | ' + formatParamPath(path);
+  }
+
+  function renderParameterInput(action, moduleIndex, actionIndex, path) {
+    var row = document.createElement('label');
+    row.className = 'parameter-row';
+
+    var label = document.createElement('span');
+    label.className = 'parameter-label';
+    label.textContent = parameterLabel(action, path);
+
+    var input = document.createElement('input');
+    input.className = 'parameter-input';
+    input.setAttribute('type', 'text');
+    input.setAttribute('data-param-edit', '1');
+    input.setAttribute('data-module-index', String(moduleIndex));
+    input.setAttribute('data-action-index', String(actionIndex));
+    input.setAttribute('data-param-path', encodeParamPath(path));
+    input.value = parameterValueText(getPathValue(action, path));
+    input.addEventListener('change', function () {
+      syncParameterInput(input);
+    });
+
+    row.appendChild(label);
+    row.appendChild(input);
+    return row;
+  }
+
+  function renderModuleParameters(module, moduleIndex) {
+    if (!module || !Array.isArray(module.actions)) return null;
+    var rows = [];
+    module.actions.forEach(function (action, actionIndex) {
+      editableParameterPaths(action).forEach(function (path) {
+        rows.push(renderParameterInput(action, moduleIndex, actionIndex, path));
+      });
+    });
+    if (!rows.length) return null;
+
+    var container = document.createElement('div');
+    container.className = 'parameter-preview';
+    var title = document.createElement('div');
+    title.className = 'parameter-preview-title';
+    title.textContent = text('parameterPreviewTitle');
+    container.appendChild(title);
+    rows.forEach(function (row) {
+      container.appendChild(row);
+    });
+    return container;
+  }
+
+  function syncParameterInput(input) {
+    var moduleIndex = Number(input.getAttribute('data-module-index'));
+    var actionIndex = Number(input.getAttribute('data-action-index'));
+    var path = decodeParamPath(input.getAttribute('data-param-path'));
+    var action = state.pending &&
+      state.pending.modules &&
+      state.pending.modules[moduleIndex] &&
+      state.pending.modules[moduleIndex].actions &&
+      state.pending.modules[moduleIndex].actions[actionIndex];
+    if (!action) throw new Error('Parameter action not found.');
+    var original = getPathValue(action, path);
+    var parsed = parseParameterValue(input.value, original);
+    setPathValue(action, path, parsed);
+    input.value = parameterValueText(parsed);
+    input.className = input.className.replace(/\s*is-invalid/g, '');
+  }
+
+  function syncEditableParameters() {
+    var errors = [];
+    var inputs = document.querySelectorAll('[data-param-edit]');
+    for (var i = 0; i < inputs.length; i++) {
+      try {
+        syncParameterInput(inputs[i]);
+      } catch (error) {
+        inputs[i].className = inputs[i].className.replace(/\s*is-invalid/g, '') + ' is-invalid';
+        errors.push(error.message || String(error));
+      }
+    }
+    return errors;
+  }
+
   function selectedMarkerTarget() {
     var element = requireElement('markerTarget');
     return element.value === 'comp' ? 'comp' : 'layer';
@@ -123,18 +336,49 @@
     if (target) summary += '\n' + target;
     setText('pendingSummary', summary);
     plan.modules.forEach(function (module, index) {
-      var row = document.createElement('label');
+      var row = document.createElement('div');
       row.className = 'module';
-      row.innerHTML =
-        '<input type="checkbox" data-index="' + index + '"' + (module.checked !== false ? ' checked' : '') + '>' +
-        '<span><span class="module-title"></span><span class="module-summary"></span><span class="module-meta"></span><span class="module-warning"></span><span class="module-requirement"></span></span>';
-      row.querySelector('.module-title').textContent = localizedField(module, 'title');
-      row.querySelector('.module-summary').textContent = localizedField(module, 'summary');
-      row.querySelector('.module-meta').textContent = formatActionCount(module.actions ? module.actions.length : 0);
+
+      var checkbox = document.createElement('input');
+      checkbox.setAttribute('type', 'checkbox');
+      checkbox.setAttribute('data-index', String(index));
+      checkbox.checked = module.checked !== false;
+
+      var body = document.createElement('div');
+      body.className = 'module-body';
+
+      var title = document.createElement('span');
+      title.className = 'module-title';
+      title.textContent = localizedField(module, 'title');
+
+      var moduleSummary = document.createElement('span');
+      moduleSummary.className = 'module-summary';
+      moduleSummary.textContent = localizedField(module, 'summary');
+
+      var meta = document.createElement('span');
+      meta.className = 'module-meta';
+      meta.textContent = formatActionCount(module.actions ? module.actions.length : 0);
+
+      var warning = document.createElement('span');
+      warning.className = 'module-warning';
       var warnings = compactList(localizedList(module, 'warnings'));
+      warning.textContent = warnings ? text('pendingWarningLabel') + ': ' + warnings : '';
+
+      var requirement = document.createElement('span');
+      requirement.className = 'module-requirement';
       var requires = compactList(localizedList(module, 'requires'));
-      row.querySelector('.module-warning').textContent = warnings ? text('pendingWarningLabel') + ': ' + warnings : '';
-      row.querySelector('.module-requirement').textContent = requires ? text('pendingRequiresLabel') + ': ' + requires : '';
+      requirement.textContent = requires ? text('pendingRequiresLabel') + ': ' + requires : '';
+
+      body.appendChild(title);
+      body.appendChild(moduleSummary);
+      body.appendChild(meta);
+      body.appendChild(warning);
+      body.appendChild(requirement);
+      var parameters = renderModuleParameters(module, index);
+      if (parameters) body.appendChild(parameters);
+
+      row.appendChild(checkbox);
+      row.appendChild(body);
       list.appendChild(row);
     });
   }
@@ -358,10 +602,17 @@
     if (name) bridge.call('addMarker', { name: name, target: selectedMarkerTarget() }).then(refreshContext);
   });
   requireElement('applyChecked').addEventListener('click', function () {
+    var parameterErrors = syncEditableParameters();
+    if (parameterErrors.length) {
+      setText('pendingSummary', text('pendingInvalidParameter').replace('{error}', parameterErrors[0]));
+      return;
+    }
     var checked = Array.prototype.map.call(document.querySelectorAll('[data-index]'), function (input) {
       return { index: Number(input.getAttribute('data-index')), checked: input.checked };
     });
-    bridge.call('applyCheckedModules', { checked: checked }).then(function (result) {
+    var payload = { checked: checked };
+    if (state.pending) payload.plan = clonePlain(state.pending);
+    bridge.call('applyCheckedModules', payload).then(function (result) {
       setText('pendingSummary', result.ok ? appliedModulesMessage(checked, result.message) : result.error);
     });
   });

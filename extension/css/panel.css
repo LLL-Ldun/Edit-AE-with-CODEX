@@ -250,6 +250,10 @@ button.full {
   font-weight: 700;
 }
 
+.module-body {
+  min-width: 0;
+}
+
 .module-summary {
   display: block;
   color: #c8c8c8;
@@ -276,4 +280,49 @@ button.full {
 
 .module-requirement {
   color: #9fb8df;
+}
+
+.parameter-preview {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #343434;
+}
+
+.parameter-preview-title {
+  color: #d7d7d7;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.parameter-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 0.8fr) minmax(82px, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.parameter-label {
+  color: #aaa;
+  font-size: 11px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.parameter-input {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  background: #151515;
+  color: #f0f0f0;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  padding: 5px 6px;
+  font-size: 12px;
+}
+
+.parameter-input.is-invalid {
+  border-color: #d16a6a;
+  background: #261616;
 }

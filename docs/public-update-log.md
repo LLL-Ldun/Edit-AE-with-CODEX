@@ -13,7 +13,7 @@ This document is public-facing and safe to push. It records shipped updates, vis
 - 上下文导出：可导出当前合成、当前时间、选中图层、图层来源、Transform、marker、已有特效属性树、可用插件列表和上下文指纹。
 - 标记点锚定：支持添加常用 marker，并可选择写入选中图层或当前合成。
 - 预设库扫描：支持扫描 AE 用户预设、安装目录预设和用户自定义预设路径，输出 `preset-cache.json`。
-- 待应用方案：读取 `pending-action.json`，以可勾选模块列表展示 Codex 生成的方案。
+- 待应用方案：读取 `pending-action.json`，以可勾选模块列表展示 Codex 生成的方案，并支持应用前浏览/编辑关键参数值。
 - 方案历史：刷新或丢弃方案时保留历史记录，支持从历史方案恢复为当前待应用方案。
 - 结构化执行器：支持 `addEffect`、`modifyEffect`、`applyPreset`、`setProperty`、`setKeyframes`、`setExpression`。
 - 安全校验：应用前校验 schema、目标图层、动作类型和 `contextFingerprint`，并在 AE undo group 内执行。
@@ -28,7 +28,7 @@ This document is public-facing and safe to push. It records shipped updates, vis
 - Context export: exports the active comp, current time, selected layers, source metadata, Transform data, markers, existing effect property trees, available effects, and a context fingerprint.
 - Marker anchors: supports quick marker creation and can target either the selected layer or the active comp.
 - Preset library scan: scans AE user presets, installed presets, and user-defined preset paths, then writes `preset-cache.json`.
-- Pending plan view: reads `pending-action.json` and shows Codex-generated modules as a checkable list.
+- Pending plan view: reads `pending-action.json`, shows Codex-generated modules as a checkable list, and supports reviewing/editing key parameter values before applying.
 - Plan history: preserves previous pending plans when refreshing or discarding, and can restore a history item as the current pending plan.
 - Structured executor: supports `addEffect`, `modifyEffect`, `applyPreset`, `setProperty`, `setKeyframes`, `setExpression`, layer creation actions, and layer property actions.
 - Safety gates: validates schema, target layer, action type, and `contextFingerprint` before applying, then executes inside an AE undo group.
@@ -37,6 +37,24 @@ This document is public-facing and safe to push. It records shipped updates, vis
 - Plugin search suggestions: typing in the Plugin Params field shows installed-effect suggestions similar to AE Effects search, and clicking one fills the scan input.
 
 ## Update History / 更新记录
+
+### 2026-05-14 - Editable Pending Plan Parameters / 待应用方案参数预览与编辑
+
+Commit: `pending`
+
+中文：
+- 待应用方案模块下新增参数预览区，自动列出 `setProperty`、`setKeyframes`、`modifyEffect`、图层创建/图层属性等动作里的可编辑参数。
+- 用户可以在面板中直接修改数值、数组、布尔值或字符串，再点击“应用勾选”执行。
+- “应用勾选”会把面板中编辑后的临时 plan 传给 AE 执行器；不会为了预览编辑而直接改写桥接目录里的 `pending-action.json`。
+- AE 执行器现在会优先使用 payload 中的编辑后方案，并继续执行原有 schema、上下文指纹和目标图层校验。
+- 验证：新增面板和执行器回归测试，覆盖参数渲染、编辑后 payload 注入，以及执行器使用编辑后 plan。
+
+English:
+- Pending modules now show a parameter preview area that lists editable values from `setProperty`, `setKeyframes`, `modifyEffect`, layer creation, and layer property actions.
+- Users can edit numbers, arrays, booleans, or strings directly in the panel before clicking Apply Checked.
+- Apply Checked sends the panel-edited temporary plan to the AE executor without rewriting `pending-action.json` just for preview edits.
+- The AE executor now prefers the edited plan from the payload while keeping the existing schema, context fingerprint, and target-layer validation gates.
+- Verification: added panel and executor regression tests for parameter rendering, edited payload injection, and executor use of the edited plan.
 
 ### 2026-05-14 - Localized Pending Plan Text / 待应用方案双语显示
 

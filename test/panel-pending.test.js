@@ -201,6 +201,100 @@ test('panel localizes pending and archived plan text from the selected language'
   assert.ok(calls.some((call) => call.name === 'readPendingAction'));
 });
 
+test('panel lets users review and edit action parameters before applying', async () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'js', 'panel.js'), 'utf8');
+  const elements = createPanelElements();
+  const calls = [];
+
+  function BridgeClient() {}
+  BridgeClient.prototype.call = function call(name, payload) {
+    calls.push({ name, payload });
+    if (name === 'readPendingAction') {
+      return Promise.resolve({
+        ok: true,
+        plan: {
+          schemaVersion: 1,
+          createdAt: '2026-05-14T10:00:00+08:00',
+          contextFingerprint: 'fingerprint',
+          archiveId: 'current-id',
+          title: 'Parameter Plan',
+          summary: 'Tune parameters before applying.',
+          target: { compId: 'active', layerIndex: 1, layerName: 'Clip' },
+          modules: [{
+            id: 'm1',
+            title: 'Glow Params',
+            summary: 'Adjust intensity and pulse.',
+            checked: true,
+            actions: [
+              {
+                type: 'setProperty',
+                effectMatchName: 'Deep Glow',
+                propertyPath: ['Glow Radius'],
+                value: 35
+              },
+              {
+                type: 'setKeyframes',
+                effectMatchName: 'Deep Glow',
+                propertyPath: ['Exposure'],
+                keys: [
+                  { time: 1.25, value: 0.4 },
+                  { time: 1.75, value: 1.2 }
+                ]
+              }
+            ]
+          }]
+        },
+        archive: { plans: [] }
+      });
+    }
+    if (name === 'applyCheckedModules') {
+      return Promise.resolve({ ok: true, message: 'Applied modules: Glow Params' });
+    }
+    if (name === 'getSettings') return Promise.resolve({ ok: true, settings: { presetPaths: [] } });
+    return Promise.resolve({ ok: true });
+  };
+
+  const context = {
+    window: {
+      AECreateBridgeClient: BridgeClient,
+      AECreatePanelI18n: createI18n(),
+      localStorage: createStorage()
+    },
+    document: createDocument(elements),
+    Promise,
+    Number,
+    Array,
+    String,
+    JSON,
+    prompt() {
+      return null;
+    }
+  };
+
+  vm.runInNewContext(source, context, { filename: 'panel.js' });
+  await Promise.resolve();
+  await Promise.resolve();
+
+  const parameterInputs = elements.moduleList.querySelectorAll('[data-param-edit]');
+  assert.equal(parameterInputs.length, 5);
+  assert.equal(parameterInputs[0].value, '35');
+  assert.match(combinedText(elements.moduleList), /Deep Glow > Glow Radius/);
+  assert.match(combinedText(elements.moduleList), /keys\[1\]\.value/);
+
+  parameterInputs[0].value = '64';
+  parameterInputs[3].value = '2.00';
+  parameterInputs[4].value = '1.8';
+
+  elements.moduleList.children[0].querySelector('[data-index]').checked = true;
+  elements.applyChecked.listeners.click();
+  await Promise.resolve();
+
+  const applyCall = calls.find((call) => call.name === 'applyCheckedModules');
+  assert.equal(applyCall.payload.plan.modules[0].actions[0].value, 64);
+  assert.equal(applyCall.payload.plan.modules[0].actions[1].keys[1].time, 2);
+  assert.equal(applyCall.payload.plan.modules[0].actions[1].keys[1].value, 1.8);
+});
+
 test('marker buttons use the selected marker target', async () => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'js', 'panel.js'), 'utf8');
   const elements = createPanelElements();
@@ -409,9 +503,10 @@ function createDocument(elements) {
     querySelectorAll(selector) {
       if (selector === '[data-marker]') return markerButtons;
       if (selector === '[data-index]') {
-        return elements.moduleList.children
-          .map((child) => child.querySelector('[data-index]'))
-          .filter(Boolean);
+        return elements.moduleList.querySelectorAll('[data-index]');
+      }
+      if (selector === '[data-param-edit]') {
+        return elements.moduleList.querySelectorAll('[data-param-edit]');
       }
       if (selector === '[data-i18n]') return [];
       return [];
@@ -445,18 +540,12 @@ function createElement(id) {
       delete this.attributes[name];
     },
     querySelector(selector) {
-      if (selector === '[data-index]') return this.input || null;
-      if (selector === '.module-title') return this.title || findChildByClass(this, 'module-title');
-      if (selector === '.module-summary') return this.summary || findChildByClass(this, 'module-summary');
-      if (selector === '.module-meta') return this.meta || findChildByClass(this, 'module-meta');
-      if (selector === '.archive-title') return findChildByClass(this, 'archive-title');
-      if (selector === '.archive-summary') return findChildByClass(this, 'archive-summary');
-      if (selector === '.archive-meta') return findChildByClass(this, 'archive-meta');
-      if (selector === '.module-warning') return findChildByClass(this, 'module-warning');
-      if (selector === '.module-requirement') return findChildByClass(this, 'module-requirement');
-      if (selector === '.effect-suggestion-title') return findChildByClass(this, 'effect-suggestion-title');
-      if (selector === '.effect-suggestion-meta') return findChildByClass(this, 'effect-suggestion-meta');
-      return null;
+      return this.querySelectorAll(selector)[0] || null;
+    },
+    querySelectorAll(selector) {
+      const matches = [];
+      collectMatches(this, selector, matches);
+      return matches;
     },
     set innerHTML(value) {
       this.children = [];
@@ -484,6 +573,23 @@ function createElement(id) {
 
 function findChildByClass(element, className) {
   return element.children.find((child) => child.className === className) || null;
+}
+
+function collectMatches(element, selector, matches) {
+  if (selector === '[data-index]' && element.getAttribute && element.getAttribute('data-index') !== null) {
+    matches.push(element);
+  }
+  if (selector === '[data-param-edit]' && element.getAttribute && element.getAttribute('data-param-edit') !== null) {
+    matches.push(element);
+  }
+  if (selector.charAt(0) === '.' && element.className === selector.slice(1)) {
+    matches.push(element);
+  }
+  element.children.forEach((child) => collectMatches(child, selector, matches));
+}
+
+function combinedText(element) {
+  return [element.textContent].concat(element.children.map(combinedText)).join('');
 }
 
 function createI18n(initialLanguage = 'en') {

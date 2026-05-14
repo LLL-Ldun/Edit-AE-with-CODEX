@@ -75,6 +75,97 @@ test('applyCheckedModules does not depend on AECreateContext being in scope', ()
   assert.equal(result.message, 'Applied modules: Glow');
 });
 
+test('applyCheckedModules can use edited pending plan from payload', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'jsx', 'actions.jsx'), 'utf8');
+
+  class CompItem {}
+  const targetLayer = { name: 'Adjustment Layer' };
+  const activeComp = new CompItem();
+  activeComp.numLayers = 1;
+  activeComp.layer = function layer(index) {
+    return index === 1 ? targetLayer : null;
+  };
+
+  const context = vm.createContext({
+    AECreateBridge: {
+      respond(object) {
+        return JSON.stringify(object);
+      },
+      fail(message) {
+        throw new Error(message);
+      }
+    },
+    app: {
+      project: { activeItem: activeComp },
+      beginUndoGroup() {},
+      endUndoGroup() {}
+    },
+    CompItem,
+    Error,
+    String,
+    isFinite,
+    Math
+  });
+  context.AECreateJSON = vm.runInContext('JSON', context);
+
+  vm.runInContext(source, context, { filename: 'actions.jsx' });
+  context.AECreateActions.readPendingPlan = function readPendingPlan() {
+    return {
+      schemaVersion: 1,
+      createdAt: '2026-05-13T01:10:00+08:00',
+      contextFingerprint: 'fingerprint',
+      title: 'Disk Plan',
+      summary: 'Old disk plan.',
+      target: { compId: 'active', layerIndex: 1, layerName: 'Adjustment Layer' },
+      modules: [{
+        id: 'm1',
+        title: 'Disk Glow',
+        summary: 'Old value.',
+        checked: true,
+        actions: [{ type: 'setProperty', effectMatchName: 'Deep Glow', propertyPath: ['Radius'], value: 35 }]
+      }]
+    };
+  };
+  context.AECreateActions.currentContextFingerprint = function currentContextFingerprint() {
+    return 'fingerprint';
+  };
+  context.AECreateActions.validatePendingActionOrFail = function validatePendingActionOrFail() {};
+  context.AECreateActions.applyModule = function applyModule(layer, module) {
+    assert.equal(layer, targetLayer);
+    assert.equal(module.title, 'Edited Glow');
+    assert.equal(module.actions[0].value, 64);
+  };
+  context.AECreateActions.log = function log() {};
+  context.AECreateActions.writeHistory = function writeHistory(plan) {
+    assert.equal(plan.modules[0].title, 'Edited Glow');
+  };
+
+  const editedPlan = {
+    schemaVersion: 1,
+    createdAt: '2026-05-13T01:10:00+08:00',
+    contextFingerprint: 'fingerprint',
+    title: 'Edited Plan',
+    summary: 'Edited before applying.',
+    target: { compId: 'active', layerIndex: 1, layerName: 'Adjustment Layer' },
+    modules: [{
+      id: 'm1',
+      title: 'Edited Glow',
+      summary: 'Edited value.',
+      checked: true,
+      actions: [{ type: 'setProperty', effectMatchName: 'Deep Glow', propertyPath: ['Radius'], value: 64 }]
+    }]
+  };
+
+  const raw = context.AECreateBridge.applyCheckedModules(JSON.stringify({
+    checked: [{ index: 0, checked: true }],
+    plan: editedPlan
+  }));
+  const result = JSON.parse(raw);
+
+  assert.equal(result.ok, true, result.error);
+  assert.equal(result.message, 'Applied modules: Edited Glow');
+});
+
 test('applyModule can target effects at a newly created particle layer', () => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'jsx', 'actions.jsx'), 'utf8');
 
