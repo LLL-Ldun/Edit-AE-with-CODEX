@@ -95,9 +95,13 @@ test('panel renders pending modules as list rows with action counts', async () =
   assert.equal(elements.pendingArchiveList.children.length, 1);
   assert.equal(elements.pendingArchiveList.children[0].querySelector('.archive-title').textContent, 'Old Shake Plan');
 
-  elements.pendingArchiveList.children[0].listeners.click();
+  const originalArchiveItem = elements.pendingArchiveList.children[0];
+  const callCountBeforeSelect = calls.length;
+  originalArchiveItem.listeners.click();
   await Promise.resolve();
+  assert.equal(calls.length, callCountBeforeSelect);
   assert.equal(calls.some((call) => call.name === 'restorePendingAction'), false);
+  assert.equal(elements.pendingArchiveList.children[0], originalArchiveItem);
   assert.match(elements.pendingArchiveList.children[0].className, /is-selected/);
 
   elements.pendingArchiveList.children[0].querySelector('.archive-delete').listeners.click({ stopPropagation() {} });

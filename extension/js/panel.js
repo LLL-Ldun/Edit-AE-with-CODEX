@@ -540,6 +540,19 @@
     if (!shown) setEmptyText('pendingArchiveList', 'noPendingArchive');
   }
 
+  function setArchiveItemSelectedClass(item, selected) {
+    item.className = item.className.replace(/\s*is-selected/g, '') + (selected ? ' is-selected' : '');
+  }
+
+  function updateArchiveSelectionClasses() {
+    var list = requireElement('pendingArchiveList');
+    for (var i = 0; i < list.children.length; i++) {
+      var item = list.children[i];
+      if (!item || !item.getAttribute) continue;
+      setArchiveItemSelectedClass(item, item.getAttribute('data-archive-id') === state.selectedArchiveId);
+    }
+  }
+
   function refreshContext() {
     bridge.call('exportContext', {}).then(function (result) {
       setText('contextStatus', result.ok ? result.message : result.error);
@@ -571,7 +584,7 @@
 
   function selectPendingArchive(id) {
     state.selectedArchiveId = id;
-    renderPendingArchive(state.pendingArchive, state.currentArchiveId);
+    updateArchiveSelectionClasses();
   }
 
   function deletePendingArchive(id) {
