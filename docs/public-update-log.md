@@ -38,6 +38,23 @@ This document is public-facing and safe to push. It records shipped updates, vis
 
 ## Update History / 更新记录
 
+### 2026-05-15 - Disposable Panel Operation Diagnostics / 可丢弃面板操作诊断日志
+Commit: `4d2458d`
+
+中文：
+- 新增一个轻量、可随时移除的面板操作诊断日志，用于排查蓝屏前最后触发了什么桥接操作。
+- 每次面板调用 AE JSX 桥接函数时，会在桥接目录的 `logs/panel-operations.jsonl` 写入 `start` / `end` / `error` 事件；如果蓝屏发生在操作中途，通常能留下最后一条 `start`。
+- 日志只记录操作名、阶段、payload/result 字节数、少量安全摘要、当前桥接目录及 `pending-action.json` / `pending-plans.json` / `current-context.json` 等文件大小，不写入完整方案 JSON 或素材内容。
+- 日志为滚动文件，超过约 256 KB 会保留末尾近期记录；用户可用面板“打开日志”进入 `logs` 文件夹查看或直接删除。
+- 验证：新增桥接客户端与 JSX loader 回归测试；`npm test` 全量 74 项通过；已通过 `scripts/install-dev.ps1` 部署到本机 CEP 扩展目录。
+
+English:
+- Added a lightweight, disposable panel operation diagnostics log to identify the last bridge operation before a blue screen.
+- Every panel-to-AE JSX bridge call now writes `start` / `end` / `error` events to `<bridge-folder>/logs/panel-operations.jsonl`; if a crash occurs mid-operation, the last `start` entry should usually remain.
+- The log records operation name, phase, payload/result byte counts, small safe summaries, bridge folder, and key bridge-file sizes such as `pending-action.json`, `pending-plans.json`, and `current-context.json`; it does not store full plan JSON or media contents.
+- The file is rolling and trims itself after roughly 256 KB, keeping recent records; users can open the `logs` folder from the panel or delete the file at any time.
+- Verification: added bridge-client and JSX-loader regression tests; `npm test`, 74 tests passed; deployed locally with `scripts/install-dev.ps1`.
+
 ### 2026-05-15 - Explicit Plan History Restore / 显式历史方案恢复
 Commit: `8e05dda`
 

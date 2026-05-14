@@ -11,6 +11,7 @@
 - [ ] Confirm GPU Mode defaults to `Integrated/Safe` / `集显/安全`.
 - [ ] Click `Refresh Context`.
 - [ ] Confirm `current-context.json` exists in the bridge folder.
+- [ ] Click `Open Logs` and confirm `logs/panel-operations.jsonl` exists after using the panel; inspect the latest lines and confirm recent operations are recorded as `start` / `end` / `error` JSONL events.
 - [ ] Confirm exported selected layer records include source, transform, markers, and `effectTreeMode: "skipped-gpu-safe"` in Integrated/Safe mode.
 - [ ] Switch GPU Mode to `Discrete/Performance` only in a disposable stable test project, refresh context, and confirm exported selected layer records can include full effect property tree fields where AE exposes them.
 - [ ] In `Library`, click `Add Preset Path` if your presets live outside the default AE folders.
