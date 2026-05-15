@@ -38,6 +38,23 @@ This document is public-facing and safe to push. It records shipped updates, vis
 
 ## Update History / 更新记录
 
+### 2026-05-15 - Selective Plugin Parameter Scanning / 可选择插件参数扫描
+Commit: `50a133d`
+
+中文：
+- 插件参数库新增已安装插件扫描状态列表，可显示每个插件的名称、`matchName`、分类、已扫描 / 未扫描 / 上次失败状态、参数数量和上次扫描时间。
+- 新增状态筛选：全部插件、未扫描、已扫描、上次失败；搜索框也会同步过滤状态列表。
+- 新增“勾选未扫描”和“扫描勾选插件”，用户可以一次只扫描自己选择的几个插件，避免默认扫描全部插件带来的时间和稳定性风险。
+- 新增 JSX 桥接接口 `listEffectScanStatus` 和 `scanSelectedEffectParams`；扫描结果继续写入桥接目录的 `effect-params/*.json`、`effect-catalog.json` 和 `effect-scan-report.json`。
+- 同一个插件重新扫描时仍清理旧扫描文件再写入新文件，避免旧参数树污染当前库。
+
+English:
+- Added an installed-plugin scan status list to the Plugin Params panel, showing each plugin's name, `matchName`, category, Scanned / Unscanned / Last Failed status, parameter count, and last scan time.
+- Added status filters for All, Unscanned, Scanned, and Last Failed; the search box also filters the status list.
+- Added Select Unscanned and Scan Checked Plugins so users can scan only chosen plugins instead of triggering a full installed-plugin scan.
+- Added JSX bridge APIs `listEffectScanStatus` and `scanSelectedEffectParams`; scan output still writes to `effect-params/*.json`, `effect-catalog.json`, and `effect-scan-report.json` in the bridge folder.
+- Re-scanning the same plugin still replaces old scan files for that plugin, preventing stale parameter trees from polluting the current library.
+
 ### 2026-05-15 - Persistent Bridge Settings And Scan Cache Reuse / 持久桥接设置与扫描缓存复用
 Commit: `d2ce6c3`
 
