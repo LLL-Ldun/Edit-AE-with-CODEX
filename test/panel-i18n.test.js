@@ -44,6 +44,10 @@ test('panel i18n defaults to Chinese and falls back for unknown language codes',
   assert.equal(i18n.t('en', 'scanEffectParams'), 'Scan Plugin');
   assert.equal(i18n.t('zh', 'scanSelectedEffects'), '扫描勾选插件');
   assert.equal(i18n.t('en', 'effectFilterUnscanned'), 'Unscanned');
+  assert.equal(i18n.t('zh', 'effectFilterWorkflowKnown'), '已入库');
+  assert.equal(i18n.t('en', 'effectFilterWorkflowKnown'), 'In Workflow Library');
+  assert.equal(i18n.t('zh', 'effectFilterWorkflowUnknown'), '未入库');
+  assert.equal(i18n.t('en', 'effectFilterWorkflowUnknown'), 'Not In Workflow Library');
   assert.equal(i18n.t('zh', 'effectStatusScanned'), '已扫描');
   assert.equal(i18n.t('en', 'effectStatusNoneSelected'), 'Select plugins to scan first.');
   assert.equal(i18n.t('zh', 'effectWorkflowKnown'), 'Workflow: 已入库');

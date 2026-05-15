@@ -764,6 +764,17 @@ test('plugin scan status list can select unscanned plugins and scan only those',
   assert.match(combinedText(elements.effectStatusList.children[2]), /Failed/);
   assert.match(combinedText(elements.effectStatusList.children[2]), /Workflow: Not In Library/);
 
+  elements.effectScanFilter.value = 'workflow-known';
+  elements.effectScanFilter.listeners.change();
+  assert.equal(elements.effectStatusList.children.length, 2);
+  assert.match(combinedText(elements.effectStatusList.children[0]), /Trapcode Particular/);
+  assert.match(combinedText(elements.effectStatusList.children[1]), /Deep Glow/);
+
+  elements.effectScanFilter.value = 'workflow-unknown';
+  elements.effectScanFilter.listeners.change();
+  assert.equal(elements.effectStatusList.children.length, 1);
+  assert.match(combinedText(elements.effectStatusList.children[0]), /Broken FX/);
+
   elements.selectUnscannedEffects.listeners.click();
   elements.scanSelectedEffects.listeners.click();
   await Promise.resolve();

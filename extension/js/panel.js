@@ -672,6 +672,8 @@
 
   function effectStatusFilterMatches(effect) {
     var filter = requireElement('effectScanFilter').value || 'all';
+    if (filter === 'workflow-known') return effect.workflowStatus === 'known';
+    if (filter === 'workflow-unknown') return effect.workflowStatus !== 'known';
     return filter === 'all' || effect.scanStatus === filter;
   }
 
