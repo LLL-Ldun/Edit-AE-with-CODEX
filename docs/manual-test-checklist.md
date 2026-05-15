@@ -25,11 +25,12 @@
 - [ ] In `Plugin Params`, type a partial query such as `p` and confirm matching installed effects appear in a scrollable suggestion list.
 - [ ] Click a plugin suggestion and confirm the search input is filled with that plugin name.
 - [ ] Click `Refresh List` / `刷新名单` and confirm installed plugins are listed with Scanned / Unscanned / Failed status.
+- [ ] After at least one new plugin scan, confirm `<bridge-folder>/effect-scan-index.json` exists; click `Refresh List` again and confirm the list refresh does not stall while parsing large `effect-params/*.json` files.
 - [ ] Confirm each plugin row also shows whether its plugin workflow is already in the built-in workflow library.
 - [ ] Use the plugin status filter to show only unscanned plugins, then confirm the list updates without scanning anything.
 - [ ] Use the plugin status filter to show only `已入库` / `In Workflow Library` plugins and only `未入库` / `Not In Workflow Library` plugins, then confirm the list updates without scanning anything.
 - [ ] With the filter set to `已入库` / `In Workflow Library`, click `Select Unscanned` / `勾选未扫描`, then confirm only visible plugins that are both in-library and unscanned become checked.
-- [ ] Click `Scan Checked Plugins` / `扫描勾选插件`, and confirm the status text first shows the selected count with 0 scanned, then updates with scanned and failed counts after the scan returns.
+- [ ] Click `Scan Checked Plugins` / `扫描勾选插件`, and confirm the status text first shows the selected count with 0 scanned, then increments scanned and failed counts after each selected plugin returns.
 - [ ] Click `Scan Plugin`.
 - [ ] Confirm `<bridge-folder>/effect-catalog.json`, `<bridge-folder>/effect-workflows.json`, and an `effect-params/*.json` file are created.
 - [ ] Close and reopen the panel after plugin scanning, then confirm the same bridge folder still exposes `effect-catalog.json`, `effect-workflows.json`, and the existing `effect-params/*.json` scan records.

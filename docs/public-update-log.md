@@ -38,6 +38,19 @@ This document is public-facing and safe to push. It records shipped updates, vis
 
 ## Update History / 更新记录
 
+### 2026-05-16 - Faster Plugin List Refresh And Per-Plugin Scan Progress / 插件名单刷新加速与逐插件扫描进度
+Commit: `fab5dec`
+
+中文：
+- `Refresh List` / `刷新名单` 变慢的根因是旧实现每次都会读取并解析 `effect-params/*.json` 的完整参数树；大型插件如 Particular 的扫描 JSON 可能很大，多个文件叠加后会拖慢 AE 主线程。
+- 插件扫描现在会维护轻量 `effect-scan-index.json`，刷新名单优先读取这个索引；对旧扫描文件只读取文件开头的元数据，不再完整解析 `params` 参数树。
+- `Scan Checked Plugins` / `扫描勾选插件` 改为按插件逐个扫描，状态区会在每个插件返回后更新已扫描/失败数量。单个插件内部的参数遍历仍由 AE 同步执行，所以进度粒度是“每个插件”，不是每个参数。
+
+English:
+- `Refresh List` was slow because the previous implementation read and parsed full `effect-params/*.json` parameter trees on every refresh. Large plugin scans such as Particular can make that expensive on AE's main thread.
+- Plugin scanning now maintains a lightweight `effect-scan-index.json`; list refresh prefers this index and only reads metadata from the beginning of older scan files instead of parsing full `params` trees.
+- `Scan Checked Plugins` now scans selected plugins one by one and updates scanned/failed counts after each plugin returns. Progress is per plugin; each individual plugin parameter walk still runs synchronously inside AE.
+
 ### 2026-05-15 - Filter-Aware Checked Plugin Scanning / 勾选扫描匹配当前筛选列表
 Commit: `9211593`
 
