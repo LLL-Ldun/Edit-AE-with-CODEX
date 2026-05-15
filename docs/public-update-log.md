@@ -38,6 +38,19 @@ This document is public-facing and safe to push. It records shipped updates, vis
 
 ## Update History / 更新记录
 
+### 2026-05-15 - Filter-Aware Checked Plugin Scanning / 勾选扫描匹配当前筛选列表
+Commit: `9211593`
+
+中文：
+- `勾选未扫描` 现在会尊重当前插件列表筛选和搜索条件。例如筛选为 `已入库` 时，只会勾选“已入库且未扫描”的插件，不会把隐藏在其他筛选结果里的未扫描插件一起勾选。
+- `扫描勾选插件` 现在会在状态区显示本次勾选数量、已扫描数量和失败数量；发起扫描时先显示 `已扫描 0`，扫描返回后更新为实际计数。
+- 扫描完成后刷新插件状态列表时会保留本次扫描进度文本，避免刚显示的扫描结果被列表汇总立即覆盖。
+
+English:
+- `Select Unscanned` now respects the current plugin-list filter and search query. For example, when filtered to `In Workflow Library`, it selects only plugins that are both in-library and unscanned.
+- `Scan Checked Plugins` now shows the selected count, scanned count, and failed count in the status area. It starts at scanned 0, then updates when the scan returns.
+- After a scan, the plugin status list refreshes without immediately replacing the scan progress text with the general list summary.
+
 ### 2026-05-15 - Workflow Library Filters In Plugin List / 插件名单增加 Workflow 入库筛选
 Commit: `fbe9a7d`
 
