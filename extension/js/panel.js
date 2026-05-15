@@ -642,12 +642,27 @@
     renderPresetPaths(settings.presetPaths || []);
   }
 
-  function renderEffectScanResult(result) {
+  function effectScanProgressText(selectedCount, scannedCount, failedCount) {
+    return text('effectScanProgress')
+      .replace('{selected}', String(selectedCount || 0))
+      .replace('{scanned}', String(scannedCount || 0))
+      .replace('{failed}', String(failedCount || 0));
+  }
+
+  function renderEffectScanProgress(selectedCount, scannedCount, failedCount) {
+    setText('effectScanStatus', effectScanProgressText(selectedCount, scannedCount, failedCount));
+  }
+
+  function renderEffectScanResult(result, selectedCount) {
     if (!result.ok) {
       setText('effectScanStatus', result.error);
       return;
     }
-    var lines = [result.message];
+    var lines = [];
+    if (selectedCount !== undefined) {
+      lines.push(effectScanProgressText(selectedCount, result.scannedCount || 0, result.failedCount || 0));
+    }
+    lines.push(result.message);
     if (result.parameterCount !== undefined) lines.push('Parameters: ' + result.parameterCount);
     if (result.truncated) lines.push('Truncated: true');
     if (result.outputPath) lines.push('Output: ' + result.outputPath);
@@ -682,6 +697,10 @@
     return !query || effectSearchText(effect).indexOf(query) !== -1;
   }
 
+  function effectStatusListMatches(effect) {
+    return effectStatusFilterMatches(effect) && effectStatusQueryMatches(effect);
+  }
+
   function renderEffectStatusList() {
     var list = requireElement('effectStatusList');
     list.innerHTML = '';
@@ -691,7 +710,7 @@
     }
     var shown = 0;
     state.effectScanStatus.forEach(function (effect) {
-      if (!effectStatusFilterMatches(effect) || !effectStatusQueryMatches(effect)) return;
+      if (!effectStatusListMatches(effect)) return;
       var key = effectKey(effect);
       var item = document.createElement('label');
       item.className = 'effect-status-item';
@@ -808,8 +827,9 @@
     });
   }
 
-  function loadEffectScanStatus() {
-    bridge.call('listEffectScanStatus', {}).then(function (result) {
+  function loadEffectScanStatus(options) {
+    options = options || {};
+    return bridge.call('listEffectScanStatus', {}).then(function (result) {
       if (result.ok && result.effects) {
         state.effectScanStatus = result.effects;
         state.availableEffects = result.effects;
@@ -817,7 +837,7 @@
         state.effectScanStatusLoaded = true;
         renderEffectSuggestions();
         renderEffectStatusList();
-        renderEffectScanSummary(result.summary);
+        if (!options.preserveScanStatus) renderEffectScanSummary(result.summary);
       } else {
         setText('effectScanStatus', result.error || text('effectStatusLoadFailed'));
       }
@@ -826,7 +846,7 @@
 
   function selectUnscannedEffects() {
     state.effectScanStatus.forEach(function (effect) {
-      state.selectedEffectKeys[effectKey(effect)] = effect.scanStatus === 'unscanned';
+      state.selectedEffectKeys[effectKey(effect)] = effect.scanStatus === 'unscanned' && effectStatusListMatches(effect);
     });
     renderEffectStatusList();
   }
@@ -846,13 +866,14 @@
       setText('effectScanStatus', text('effectStatusNoneSelected'));
       return;
     }
+    renderEffectScanProgress(selected.length, 0, 0);
     bridge.call('scanSelectedEffectParams', {
       effects: selected,
       maxDepth: 8,
       maxRecords: 12000
     }).then(function (result) {
-      renderEffectScanResult(result);
-      if (result.ok) loadEffectScanStatus();
+      renderEffectScanResult(result, selected.length);
+      if (result.ok) loadEffectScanStatus({ preserveScanStatus: true });
     });
   }
 

@@ -49,6 +49,8 @@ test('panel i18n defaults to Chinese and falls back for unknown language codes',
   assert.equal(i18n.t('zh', 'effectFilterWorkflowUnknown'), '未入库');
   assert.equal(i18n.t('en', 'effectFilterWorkflowUnknown'), 'Not In Workflow Library');
   assert.equal(i18n.t('zh', 'effectStatusScanned'), '已扫描');
+  assert.equal(i18n.t('zh', 'effectScanProgress'), '本次勾选 {selected} 个，已扫描 {scanned} 个，失败 {failed} 个。');
+  assert.equal(i18n.t('en', 'effectScanProgress'), 'Selected {selected} plugins, scanned {scanned}, failed {failed}.');
   assert.equal(i18n.t('en', 'effectStatusNoneSelected'), 'Select plugins to scan first.');
   assert.equal(i18n.t('zh', 'effectWorkflowKnown'), 'Workflow: 已入库');
   assert.equal(i18n.t('en', 'effectWorkflowUnknown'), 'Workflow: Not In Library');

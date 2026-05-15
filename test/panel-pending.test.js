@@ -722,9 +722,10 @@ test('plugin scan status list can select unscanned plugins and scan only those',
         effects: [
           { name: 'Trapcode Particular', matchName: 'tc Particular', category: 'RG', scanStatus: 'scanned', parameterCount: 88, workflowStatus: 'known', workflowLabel: 'Particle Solid Carrier', workflowLayerStrategy: 'solidCarrier' },
           { name: 'Deep Glow', matchName: 'Deep Glow', category: 'Glow', scanStatus: 'unscanned', workflowStatus: 'known', workflowLabel: 'Adjustment Layer Effect', workflowLayerStrategy: 'adjustmentLayer' },
+          { name: 'Mystery Particles', matchName: 'Mystery Particles', category: 'Particle', scanStatus: 'unscanned', workflowStatus: 'unknown', workflowLabel: 'Unknown Plugin Workflow', workflowLayerStrategy: 'unknown' },
           { name: 'Broken FX', matchName: 'Broken FX', category: 'Unstable', scanStatus: 'failed', scanError: 'Unable to add effect.', workflowStatus: 'unknown', workflowLabel: 'Unknown Plugin Workflow', workflowLayerStrategy: 'unknown' }
         ],
-        summary: { total: 3, scanned: 1, unscanned: 1, failed: 1 }
+        summary: { total: 4, scanned: 1, unscanned: 2, failed: 1 }
       });
     }
     if (name === 'scanSelectedEffectParams') {
@@ -757,12 +758,13 @@ test('plugin scan status list can select unscanned plugins and scan only those',
   elements.refreshEffectStatus.listeners.click();
   await Promise.resolve();
 
-  assert.equal(elements.effectStatusList.children.length, 3);
+  assert.equal(elements.effectStatusList.children.length, 4);
   assert.match(combinedText(elements.effectStatusList.children[0]), /Scanned/);
   assert.match(combinedText(elements.effectStatusList.children[0]), /Workflow: In Library/);
   assert.match(combinedText(elements.effectStatusList.children[1]), /Unscanned/);
-  assert.match(combinedText(elements.effectStatusList.children[2]), /Failed/);
+  assert.match(combinedText(elements.effectStatusList.children[3]), /Failed/);
   assert.match(combinedText(elements.effectStatusList.children[2]), /Workflow: Not In Library/);
+  assert.match(combinedText(elements.effectStatusList.children[3]), /Workflow: Not In Library/);
 
   elements.effectScanFilter.value = 'workflow-known';
   elements.effectScanFilter.listeners.change();
@@ -772,12 +774,20 @@ test('plugin scan status list can select unscanned plugins and scan only those',
 
   elements.effectScanFilter.value = 'workflow-unknown';
   elements.effectScanFilter.listeners.change();
-  assert.equal(elements.effectStatusList.children.length, 1);
-  assert.match(combinedText(elements.effectStatusList.children[0]), /Broken FX/);
+  assert.equal(elements.effectStatusList.children.length, 2);
+  assert.match(combinedText(elements.effectStatusList.children[0]), /Mystery Particles/);
+  assert.match(combinedText(elements.effectStatusList.children[1]), /Broken FX/);
+
+  elements.effectScanFilter.value = 'workflow-known';
+  elements.effectScanFilter.listeners.change();
 
   elements.selectUnscannedEffects.listeners.click();
   elements.scanSelectedEffects.listeners.click();
+  assert.match(elements.effectScanStatus.textContent, /Selected 1 plugins/);
+  assert.match(elements.effectScanStatus.textContent, /scanned 0/);
   await Promise.resolve();
+  assert.match(elements.effectScanStatus.textContent, /Selected 1 plugins/);
+  assert.match(elements.effectScanStatus.textContent, /scanned 1/);
 
   const scanCall = calls.find((call) => call.name === 'scanSelectedEffectParams');
   assert.equal(JSON.stringify(scanCall.payload.effects), JSON.stringify([{ name: 'Deep Glow', matchName: 'Deep Glow' }]));
@@ -962,6 +972,7 @@ function createI18n(initialLanguage = 'en') {
           effectWorkflowKnown: 'Workflow: 已入库',
           effectWorkflowUnknown: 'Workflow: 未入库',
           effectStatusSummary: '插件名单: 共 {total} 个，已扫描 {scanned} 个，未扫描 {unscanned} 个，失败 {failed} 个。',
+          effectScanProgress: '本次勾选 {selected} 个，已扫描 {scanned} 个，失败 {failed} 个。',
           effectStatusNotLoaded: '尚未加载插件扫描名单。',
           effectStatusEmpty: '没有匹配的插件。',
           effectStatusNoneSelected: '请先勾选要扫描的插件。',
@@ -1004,6 +1015,7 @@ function createI18n(initialLanguage = 'en') {
           effectWorkflowKnown: 'Workflow: In Library',
           effectWorkflowUnknown: 'Workflow: Not In Library',
           effectStatusSummary: 'Plugin list: {total} total, {scanned} scanned, {unscanned} unscanned, {failed} failed.',
+          effectScanProgress: 'Selected {selected} plugins, scanned {scanned}, failed {failed}.',
           effectStatusNotLoaded: 'Plugin scan list not loaded.',
           effectStatusEmpty: 'No matching plugins.',
           effectStatusNoneSelected: 'Select plugins to scan first.',
