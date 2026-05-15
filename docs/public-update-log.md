@@ -38,6 +38,19 @@ This document is public-facing and safe to push. It records shipped updates, vis
 
 ## Update History / 更新记录
 
+### 2026-05-15 - Workflow Library Filters In Plugin List / 插件名单增加 Workflow 入库筛选
+Commit: `fbe9a7d`
+
+中文：
+- 插件参数库的状态筛选下拉框新增 `已入库` 和 `未入库`。
+- `已入库` 会只显示已经匹配到 AEcreate 内置 workflow 库的插件；`未入库` 会只显示当前仍是未知 workflow 的插件。
+- 该筛选只读取现有插件名单和 workflow 匹配状态，不会触发新的插件参数扫描，适合用户快速判断后续需要补库的插件。
+
+English:
+- Added `In Workflow Library` and `Not In Workflow Library` filters to the Plugin Params status dropdown.
+- `In Workflow Library` shows only plugins that match AEcreate's built-in workflow library; `Not In Workflow Library` shows plugins still using the unknown workflow fallback.
+- The filter only reads the existing plugin list and workflow status, and does not trigger a new parameter scan.
+
 ### 2026-05-15 - Plugin Workflow Library Status In Scan List / 插件名单显示 Workflow 入库状态
 Commit: `a81614c`
 
