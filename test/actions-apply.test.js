@@ -166,6 +166,78 @@ test('applyCheckedModules can use edited pending plan from payload', () => {
   assert.equal(result.message, 'Applied modules: Edited Glow');
 });
 
+test('applyCheckedModules accepts localized plan titles from payload', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'jsx', 'actions.jsx'), 'utf8');
+
+  class CompItem {}
+  const targetLayer = { name: 'canju.mp4' };
+  const activeComp = new CompItem();
+  activeComp.numLayers = 1;
+  activeComp.layer = function layer(index) {
+    return index === 1 ? targetLayer : null;
+  };
+
+  const context = vm.createContext({
+    AECreateBridge: {
+      respond(object) {
+        return JSON.stringify(object);
+      },
+      fail(message) {
+        throw new Error(message);
+      }
+    },
+    app: {
+      project: { activeItem: activeComp },
+      beginUndoGroup() {},
+      endUndoGroup() {}
+    },
+    CompItem,
+    Error,
+    String,
+    isFinite,
+    Math
+  });
+  context.AECreateJSON = vm.runInContext('JSON', context);
+
+  vm.runInContext(source, context, { filename: 'actions.jsx' });
+  context.AECreateActions.currentContextFingerprint = function currentContextFingerprint() {
+    return 'fingerprint';
+  };
+  context.AECreateActions.applyModule = function applyModule(layer, module) {
+    assert.equal(layer, targetLayer);
+    assert.equal(module.title.zh, '单层粒子');
+  };
+  context.AECreateActions.log = function log() {};
+  context.AECreateActions.writeHistory = function writeHistory(plan) {
+    assert.equal(plan.modules[0].title.zh, '单层粒子');
+  };
+
+  const localizedPlan = {
+    schemaVersion: 1,
+    createdAt: '2026-05-16T12:40:00+08:00',
+    contextFingerprint: 'fingerprint',
+    title: { zh: '挥刀粒子飘散', en: 'Blade Particle Drift' },
+    summary: { zh: '创建单层粒子承载层。', en: 'Creates one particle carrier layer.' },
+    target: { compId: 'active', layerIndex: 1, layerName: 'canju.mp4' },
+    modules: [{
+      id: 'm1',
+      title: { zh: '单层粒子', en: 'Single Particle Layer' },
+      summary: { zh: '应用 Particular。', en: 'Applies Particular.' },
+      checked: true,
+      actions: [{ type: 'addEffect', matchName: 'tc Particular' }]
+    }]
+  };
+
+  const raw = context.AECreateBridge.applyCheckedModules(JSON.stringify({
+    checked: [{ index: 0, checked: true }],
+    plan: localizedPlan
+  }));
+  const result = JSON.parse(raw);
+
+  assert.equal(result.ok, true, result.error);
+  assert.equal(result.message, 'Applied modules: 单层粒子');
+});
+
 test('applyCheckedModules can repeat stale-fingerprint plans by resolving the target layer name', () => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'extension', 'jsx', 'actions.jsx'), 'utf8');
 

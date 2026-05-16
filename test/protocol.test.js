@@ -60,6 +60,22 @@ test('validatePendingAction accepts layer workflow actions', () => {
   assert.deepEqual(validatePendingAction(action), []);
 });
 
+test('validatePendingAction accepts localized title and summary objects', () => {
+  const action = createValidPendingAction({
+    title: { zh: '挥刀粒子飘散', en: 'Blade Particle Drift' },
+    summary: { zh: '创建单层粒子承载层。', en: 'Creates one particle carrier layer.' },
+    modules: [{
+      id: 'm1',
+      title: { zh: '单层 Particular 粒子', en: 'Single Particular Layer' },
+      summary: { zh: '按当前界面语言显示，但执行器也应允许应用。', en: 'Displays by UI language, but the executor should still apply it.' },
+      checked: true,
+      actions: [{ type: 'addEffect', matchName: 'tc Particular' }]
+    }]
+  });
+
+  assert.deepEqual(validatePendingAction(action), []);
+});
+
 test('validatePendingAction reports missing module actions', () => {
   const action = {
     schemaVersion: 1,

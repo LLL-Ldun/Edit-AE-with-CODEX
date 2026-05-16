@@ -286,6 +286,21 @@ AECreateActions.isNonEmptyString = function (value) {
   return typeof value === 'string' && value.replace(/^\s+|\s+$/g, '').length > 0;
 };
 
+AECreateActions.isNonEmptyLocalizedText = function (value) {
+  if (AECreateActions.isNonEmptyString(value)) return true;
+  if (!value || typeof value !== 'object' || value instanceof Array) return false;
+  return AECreateActions.isNonEmptyString(value.zh) || AECreateActions.isNonEmptyString(value.en);
+};
+
+AECreateActions.displayText = function (value, fallback) {
+  if (AECreateActions.isNonEmptyString(value)) return value;
+  if (value && typeof value === 'object' && !(value instanceof Array)) {
+    if (AECreateActions.isNonEmptyString(value.zh)) return value.zh;
+    if (AECreateActions.isNonEmptyString(value.en)) return value.en;
+  }
+  return fallback || '';
+};
+
 AECreateActions.isAllowedActionType = function (type) {
   for (var i = 0; i < AECreateActions.allowedActionTypes.length; i++) {
     if (AECreateActions.allowedActionTypes[i] === type) return true;
@@ -318,8 +333,8 @@ AECreateActions.validatePendingAction = function (pending, expectedContextFinger
   if (AECreateActions.isNonEmptyString(expectedContextFingerprint) && pending.contextFingerprint !== expectedContextFingerprint) {
     errors.push('contextFingerprint does not match current context');
   }
-  if (!AECreateActions.isNonEmptyString(pending.title)) errors.push('title must be a non-empty string');
-  if (!AECreateActions.isNonEmptyString(pending.summary)) errors.push('summary must be a non-empty string');
+  if (!AECreateActions.isNonEmptyLocalizedText(pending.title)) errors.push('title must be a non-empty string or localized text object');
+  if (!AECreateActions.isNonEmptyLocalizedText(pending.summary)) errors.push('summary must be a non-empty string or localized text object');
 
   if (!pending.target || typeof pending.target !== 'object' || pending.target instanceof Array) {
     errors.push('target must be an object');
@@ -342,8 +357,8 @@ AECreateActions.validatePendingAction = function (pending, expectedContextFinger
         continue;
       }
       if (!AECreateActions.isNonEmptyString(module.id)) errors.push('modules[' + m + '].id must be a non-empty string');
-      if (!AECreateActions.isNonEmptyString(module.title)) errors.push('modules[' + m + '].title must be a non-empty string');
-      if (!AECreateActions.isNonEmptyString(module.summary)) errors.push('modules[' + m + '].summary must be a non-empty string');
+      if (!AECreateActions.isNonEmptyLocalizedText(module.title)) errors.push('modules[' + m + '].title must be a non-empty string or localized text object');
+      if (!AECreateActions.isNonEmptyLocalizedText(module.summary)) errors.push('modules[' + m + '].summary must be a non-empty string or localized text object');
       if (!(module.actions instanceof Array) || module.actions.length === 0) {
         errors.push('modules[' + m + '].actions must be a non-empty array');
       } else {
@@ -515,7 +530,7 @@ AECreateBridge.applyCheckedModules = function (payloadText) {
     for (var m = 0; m < pending.modules.length; m++) {
       if (!AECreateActions.moduleIsChecked(pending.modules[m], checkedMap, m)) continue;
       AECreateActions.applyModule(layer, pending.modules[m], m, AECreateActions.createModuleContext(comp, layer));
-      applied.push(pending.modules[m].title || ('Module ' + (m + 1)));
+      applied.push(AECreateActions.displayText(pending.modules[m].title, 'Module ' + (m + 1)));
     }
     app.endUndoGroup();
     undoOpen = false;
@@ -553,7 +568,7 @@ AECreateBridge.applyCheckedModules = function (payloadText) {
 };
 
 AECreateActions.actionContext = function (module, moduleIndex, actionIndex) {
-  var title = module && module.title ? module.title : ('Module ' + (moduleIndex + 1));
+  var title = AECreateActions.displayText(module && module.title, 'Module ' + (moduleIndex + 1));
   return 'module ' + title + ' action ' + (actionIndex + 1);
 };
 

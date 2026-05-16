@@ -72,8 +72,8 @@ function validatePendingAction(action, options = {}) {
   ) {
     errors.push('contextFingerprint does not match current context');
   }
-  if (!nonEmptyString(action.title)) errors.push('title must be a non-empty string');
-  if (!nonEmptyString(action.summary)) errors.push('summary must be a non-empty string');
+  if (!nonEmptyLocalizedText(action.title)) errors.push('title must be a non-empty string or localized text object');
+  if (!nonEmptyLocalizedText(action.summary)) errors.push('summary must be a non-empty string or localized text object');
   if (!action.target || typeof action.target !== 'object') {
     errors.push('target must be an object');
   } else {
@@ -93,8 +93,8 @@ function validatePendingAction(action, options = {}) {
         return;
       }
       if (!nonEmptyString(module.id)) errors.push(`modules[${index}].id must be a non-empty string`);
-      if (!nonEmptyString(module.title)) errors.push(`modules[${index}].title must be a non-empty string`);
-      if (!nonEmptyString(module.summary)) errors.push(`modules[${index}].summary must be a non-empty string`);
+      if (!nonEmptyLocalizedText(module.title)) errors.push(`modules[${index}].title must be a non-empty string or localized text object`);
+      if (!nonEmptyLocalizedText(module.summary)) errors.push(`modules[${index}].summary must be a non-empty string or localized text object`);
       if (!Array.isArray(module.actions) || module.actions.length === 0) {
         errors.push(`modules[${index}].actions must be a non-empty array`);
       } else {
@@ -217,6 +217,12 @@ function stripVolatileFields(value) {
 
 function nonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+function nonEmptyLocalizedText(value) {
+  if (nonEmptyString(value)) return true;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  return nonEmptyString(value.zh) || nonEmptyString(value.en);
 }
 
 module.exports = {
