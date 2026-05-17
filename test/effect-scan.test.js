@@ -410,6 +410,29 @@ test('visualWorkflowLibrary exposes tutorial-derived visual workflow families', 
   }
 });
 
+test('workflow entries expose single-record source policy for official and tutorial precedence', () => {
+  const helpers = loadContextHelpers();
+
+  const pluginWorkflow = helpers.pluginWorkflow({
+    name: 'Trapcode Particular',
+    matchName: 'tc Particular',
+    category: 'RG Particles and 3D'
+  });
+  const visualWorkflow = helpers.visualWorkflowLibrary().find((entry) => entry.id === 'color-keyed-edge-particles');
+
+  assert.equal(pluginWorkflow.sourcePolicy.schemaVersion, 1);
+  assert.equal(pluginWorkflow.sourcePolicy.model, 'single-workflow-record');
+  assert.equal(pluginWorkflow.sourcePolicy.primarySourceKind, 'official');
+  assert.ok(pluginWorkflow.sourcePolicy.supplementSourceKinds.includes('tutorial'));
+  assert.match(pluginWorkflow.sourcePolicy.mergeRule, /official/i);
+
+  assert.equal(visualWorkflow.sourcePolicy.schemaVersion, 1);
+  assert.equal(visualWorkflow.sourcePolicy.model, 'single-workflow-record');
+  assert.equal(visualWorkflow.sourcePolicy.primarySourceKind, 'tutorial');
+  assert.ok(visualWorkflow.sourcePolicy.supplementSourceKinds.includes('official'));
+  assert.match(visualWorkflow.sourcePolicy.mergeRule, /tutorial/i);
+});
+
 test('supportedActionTypes includes duplicateLayer for non-destructive keyed sources', () => {
   const helpers = loadContextHelpers();
 
@@ -453,6 +476,8 @@ test('exportContextData includes the visual workflow library for AI planning', (
   assert.equal(result.ok, true);
   assert.equal(result.context.visualWorkflowLibrary.schemaVersion, 1);
   assert.ok(result.context.visualWorkflowLibrary.entries.some((entry) => entry.id === 'color-keyed-edge-particles'));
+  assert.equal(result.context.pluginWorkflowLibrary.entries.find((entry) => entry.id === 'particle-solid-carrier').sourcePolicy.primarySourceKind, 'official');
+  assert.equal(result.context.visualWorkflowLibrary.entries.find((entry) => entry.id === 'color-keyed-edge-particles').sourcePolicy.primarySourceKind, 'tutorial');
   assert.ok(result.context.supportedActionTypes.includes('duplicateLayer'));
 });
 
@@ -527,6 +552,8 @@ test('effectWorkflowCatalog records workflows for available effects', () => {
   assert.equal(catalog.effects[0].workflow.layerStrategy, 'adjustmentLayer');
   assert.equal(catalog.effects[1].workflow.layerStrategy, 'unknown');
   assert.equal(catalog.effects[1].workflow.onlineResearch.status, 'needed');
+  assert.equal(catalog.effects[0].workflow.sourcePolicy.primarySourceKind, 'official');
+  assert.equal(catalog.effects[1].workflow.sourcePolicy.primarySourceKind, 'official');
 });
 
 test('scanEffectParametersData includes inferred plugin workflow', () => {
@@ -582,6 +609,7 @@ test('scanEffectParametersData includes inferred plugin workflow', () => {
 
   assert.equal(scan.workflow.layerStrategy, 'adjustmentLayer');
   assert.ok(scan.workflow.recommendedActionTypes.includes('addAdjustmentLayer'));
+  assert.equal(scan.workflow.sourcePolicy.primarySourceKind, 'official');
 });
 
 test('findEffectInfo matches installed effects by display name or match name', () => {

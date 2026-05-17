@@ -40,6 +40,7 @@
 - [ ] Confirm the parameter JSON includes `workflow`, and that known particle/generator plugins prefer a solid carrier while known impact/glow/blur/glitch plugins prefer an adjustment layer.
 - [ ] Confirm `current-context.json` includes `visualWorkflowLibrary`, including the `color-keyed-edge-particles` workflow for requests that need keying or selecting an existing edge color before particle generation.
 - [ ] Confirm `current-context.json` includes the tutorial-derived visual workflow families: keyed edge particles, short impact adjustment stack, Twixtor speed ramp, Saber path glow, Optical Flares hit feedback, ripple dissolve, depth-map smoke composite, tracked overlay, texture/plasma overlay, and two-shot preset transition.
+- [ ] Confirm workflow entries include `sourcePolicy`, with official-primary plugin workflows and tutorial-primary visual workflows in `current-context.json`, `effect-workflows.json`, and per-plugin scans.
 - [ ] Confirm known plugin families infer specific workflows where available, such as Saber path glow, Optical Flares hit feedback, BCC Ripple Dissolve, Depth Map preprocessing, key/matte preprocessing, and 3D Stroke carrier workflows.
 - [ ] Confirm unknown plugins are marked with `workflow.layerStrategy: "unknown"` and include `onlineResearch.queries` for later official-doc/tutorial lookup.
 - [ ] Confirm the parameter JSON includes `pluginFiles` candidates for plugin binaries when matching files can be found locally.

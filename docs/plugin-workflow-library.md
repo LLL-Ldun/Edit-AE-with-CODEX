@@ -56,6 +56,7 @@ When AE context or plugin parameters are scanned, AEcreate emits workflow metada
 
 - Minimum layers first: one visual goal should not automatically become several similar solids, adjustment layers, lights, or nulls.
 - Parameter trees say which controls exist; workflow entries say how a plugin should be used in AE.
+- Each workflow entry also carries `sourcePolicy` metadata: `primarySourceKind`, `supplementSourceKinds`, `mergeRule`, and source notes. Tutorial-covered workflows use the tutorial as the primary source and official docs as the supplement; non-tutorial workflows use official docs as the primary source.
 - Requests based on an existing color, edge, blade, UI glow, or matte must consult the visual workflow library before particle actions are generated.
 - Layer Emitter particle workflows such as Particular should keep the keyed source 2D by default and only enable 3D layer switches plus Collapse Transformations when the source itself must relay 3D transform data. If particles spread across the whole comp, verify the layer/RGB source and constrain emitter size before adding more particle layers.
 - Helper layers are created only when tracking, source protection, different masks/blend scopes, a real plugin workflow, or explicit user control requires them.
@@ -66,3 +67,8 @@ When AE context or plugin parameters are scanned, AEcreate emits workflow metada
 The first built-in set covers particle carriers, adjustment impact stacks, source retime, Saber path glow, Optical Flares hits, ripple dissolves, depth-map preprocessing, key/matte preprocessing, path strokes, and unknown-plugin research.
 
 The first visual-goal set covers keyed edge particles, short impact stacks, Twixtor speed ramps, Saber path glow, flare hit feedback, ripple dissolves, depth-map smoke composites, tracked overlays, texture/plasma overlays, and two-shot preset transitions.
+
+
+## ???????
+
+?? workflow ??????? `sourcePolicy`?`primarySourceKind`?`supplementSourceKinds`?`mergeRule` ????????????? workflow ??????????????????????????? workflow ????????

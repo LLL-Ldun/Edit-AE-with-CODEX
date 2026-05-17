@@ -38,6 +38,18 @@ This document is public-facing and safe to push. It records shipped updates, vis
 
 ## Update History / 更新记录
 
+### 2026-05-18 - Workflow Source Priority Metadata / workflow 来源优先级元数据
+- Added single-record source metadata to workflow entries: `primarySourceKind`, `supplementSourceKinds`, `mergeRule`, and source notes.
+- Plugin workflow library records now default to official-primary / tutorial-supplement, while tutorial-derived visual workflows default to tutorial-primary / official-supplement.
+- Unknown plugin workflows now carry a research-needed source policy so the panel keeps a fallback record before official or tutorial coverage is added.
+- Verification: added regression coverage in `test/effect-scan.test.js` and re-ran the Node test suite.
+
+### 2026-05-18 - workflow 源优先级元数据
+- workflow 条目现在会携带单条记录式来源元数据：`primarySourceKind`、`supplementSourceKinds`、`mergeRule` 和来源说明。
+- 插件 workflow 库默认采用官方说明为主、教程为补充；教程提炼的视觉 workflow 默认采用教程为主、官方说明为补充。
+- 未识别插件 workflow 会保留 research-needed 的来源策略，避免在补库之前丢失兜底记录。
+- 验证：新增 `test/effect-scan.test.js` 回归测试并重新运行 Node 测试套件。
+
 ### 2026-05-17 - Layer Emitter 3D Switch Workflow / 图层发射器 3D 开关工作流
 
 中文：

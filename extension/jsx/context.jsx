@@ -458,8 +458,80 @@ AECreateContext.supportedActionTypes = [
   'setLayerProperties'
 ];
 
+AECreateContext.workflowSourcePolicy = function (primarySourceKind, supplementSourceKinds, options) {
+  options = options || {};
+  var supplements = [];
+  if (supplementSourceKinds && typeof supplementSourceKinds.length === 'number') {
+    for (var i = 0; i < supplementSourceKinds.length; i++) {
+      var supplement = String(supplementSourceKinds[i] || '').replace(/^\s+|\s+$/g, '');
+      if (supplement) supplements.push(supplement);
+    }
+  }
+  return {
+    schemaVersion: 1,
+    model: 'single-workflow-record',
+    primarySourceKind: primarySourceKind || 'official',
+    primarySourceStatus: options.primarySourceStatus || 'available',
+    supplementSourceKinds: supplements,
+    supplementSourceStatus: options.supplementSourceStatus || (supplements.length ? 'available' : 'none'),
+    mergeRule: options.mergeRule || ((primarySourceKind || 'official') === 'tutorial' ? 'tutorial-primary-official-supplement' : 'official-primary-tutorial-supplement'),
+    sourceNotes: options.sourceNotes || []
+  };
+};
+
+AECreateContext.workflowEntriesWithSourcePolicy = function (entries, sourcePolicyFactory) {
+  var output = [];
+  for (var i = 0; i < entries.length; i++) {
+    var entry = entries[i];
+    if (!entry.sourcePolicy) {
+      entry.sourcePolicy = typeof sourcePolicyFactory === 'function' ? sourcePolicyFactory(entry, i) : sourcePolicyFactory;
+    }
+    output.push(entry);
+  }
+  return output;
+};
+
+AECreateContext.officialWorkflowSourcePolicy = function (options) {
+  options = options || {};
+  return AECreateContext.workflowSourcePolicy('official', ['tutorial'], {
+    primarySourceStatus: options.primarySourceStatus || 'available',
+    supplementSourceStatus: options.supplementSourceStatus || 'future',
+    mergeRule: 'official-primary-tutorial-supplement',
+    sourceNotes: options.sourceNotes || [
+      'Official documentation is the default workflow source.',
+      'Video tutorials can later add missing operational details or visual recipes.'
+    ]
+  });
+};
+
+AECreateContext.tutorialWorkflowSourcePolicy = function (options) {
+  options = options || {};
+  return AECreateContext.workflowSourcePolicy('tutorial', ['official'], {
+    primarySourceStatus: options.primarySourceStatus || 'available',
+    supplementSourceStatus: options.supplementSourceStatus || 'supplemental',
+    mergeRule: 'tutorial-primary-official-supplement',
+    sourceNotes: options.sourceNotes || [
+      'Video tutorial observations define the main workflow.',
+      'Official documentation fills in omitted controls, ranges, and edge cases.'
+    ]
+  });
+};
+
+AECreateContext.researchNeededWorkflowSourcePolicy = function (options) {
+  options = options || {};
+  return AECreateContext.workflowSourcePolicy('official', ['tutorial'], {
+    primarySourceStatus: options.primarySourceStatus || 'needed',
+    supplementSourceStatus: options.supplementSourceStatus || 'future',
+    mergeRule: 'official-default-future-tutorial-supplement',
+    sourceNotes: options.sourceNotes || [
+      'No tutorial or official workflow coverage has been confirmed yet.',
+      'Use official docs as the first fallback, then enrich the record when tutorial coverage is found.'
+    ]
+  });
+};
+
 AECreateContext.effectWorkflowLibrary = function () {
-  return [{
+  var entries = [{
     id: 'saber-path-glow',
     label: 'Saber Path Glow',
     matchTokens: ['saber', 'video copilot saber'],
@@ -777,6 +849,9 @@ AECreateContext.effectWorkflowLibrary = function () {
       preferredSources: ['official vendor documentation', 'official tutorials', 'high-quality workflow tutorials']
     }
   }];
+  return AECreateContext.workflowEntriesWithSourcePolicy(entries, function () {
+    return AECreateContext.officialWorkflowSourcePolicy();
+  });
 };
 
 AECreateContext.visualWorkflowLibrary = function () {
@@ -801,7 +876,7 @@ AECreateContext.visualWorkflowLibrary = function () {
     };
   }
 
-  return [{
+  var entries = [{
     id: 'color-keyed-edge-particles',
     label: 'Color-Keyed Edge Particles',
     matchTokens: [
@@ -1248,6 +1323,9 @@ AECreateContext.visualWorkflowLibrary = function () {
     recommendedActionTypes: ['addAdjustmentLayer', 'applyPreset', 'addEffect', 'setProperty', 'setKeyframes', 'setLayerProperties'],
     onlineResearch: optionalResearch()
   }];
+  return AECreateContext.workflowEntriesWithSourcePolicy(entries, function () {
+    return AECreateContext.tutorialWorkflowSourcePolicy();
+  });
 };
 
 AECreateContext.workflowSearchText = function (effectInfo) {
@@ -1288,6 +1366,7 @@ AECreateContext.unknownPluginWorkflow = function (effectInfo) {
     schemaVersion: 1,
     id: 'unknown-plugin-workflow',
     label: 'Unknown Plugin Workflow',
+    sourcePolicy: AECreateContext.researchNeededWorkflowSourcePolicy(),
     confidence: 'low',
     matchedBy: [],
     layerStrategy: 'unknown',
