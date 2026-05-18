@@ -18,7 +18,7 @@ This document is public-facing and safe to push. It records shipped updates, vis
 - 结构化执行器：支持 `addEffect`、`modifyEffect`、`applyPreset`、`setProperty`、`setKeyframes`、`setExpression`。
 - 安全校验：应用前校验 schema、目标图层、动作类型和 `contextFingerprint`，并在 AE undo group 内执行。
 - 中英文面板：面板支持中文和 English 切换，并保存语言偏好。
-- 插件参数库：支持扫描 AE 已安装效果插件的参数树和 workflow，输出 `effect-catalog.json`、`effect-workflows.json`、`effect-scan-report.json` 和 `effect-params/*.json`。
+- 插件参数库：支持扫描 AE 已安装效果插件的参数树和 workflow，并显示教程 / 官方文档学习状态，输出 `effect-catalog.json`、`effect-workflows.json`、`effect-scan-report.json` 和 `effect-params/*.json`。
 - 插件搜索候选：在插件参数库输入框中输入字母时，会像 AE Effects 搜索一样展示已安装插件候选，点击后可直接扫描。
 
 ### English
@@ -33,10 +33,24 @@ This document is public-facing and safe to push. It records shipped updates, vis
 - Structured executor: supports `addEffect`, `modifyEffect`, `applyPreset`, `setProperty`, `setKeyframes`, `setExpression`, layer creation actions, and layer property actions.
 - Safety gates: validates schema, target layer, action type, and `contextFingerprint` before applying, then executes inside an AE undo group.
 - Bilingual panel: supports Chinese and English UI text with saved language preference.
-- Plugin parameter library: scans installed AE effect plugin parameter trees and workflows, then writes `effect-catalog.json`, `effect-workflows.json`, `effect-scan-report.json`, and `effect-params/*.json`.
+- Plugin parameter library: scans installed AE effect plugin parameter trees and workflows, shows tutorial / official-doc learning status, and writes `effect-catalog.json`, `effect-workflows.json`, `effect-scan-report.json`, and `effect-params/*.json`.
 - Plugin search suggestions: typing in the Plugin Params field shows installed-effect suggestions similar to AE Effects search, and clicking one fills the scan input.
 
 ## Update History / 更新记录
+
+### 2026-05-18 - Workflow Learning Coverage In Plugin List / workflow 学习覆盖状态显示
+
+English:
+- Added `learningCoverage` metadata to workflow entries, plugin scan data, scan indexes, and workflow catalogs so each plugin can report whether its workflow has been learned from video tutorials and official documentation.
+- The Plugin Params list now shows compact Tutorial / Docs learning status per plugin and refreshes that text when switching the panel language.
+- Unknown plugin workflows remain visible but show unknown learning coverage until they are promoted through tutorial or official-doc research.
+- Verification: updated `test/effect-scan.test.js` and `test/panel-pending.test.js`; both targeted suites passed.
+
+中文：
+- 为 workflow 条目、插件扫描数据、扫描索引和 workflow 目录补充 `learningCoverage` 元数据，用来标记该插件 workflow 是否已经学习过视频教程与官方文档。
+- 插件参数库名单现在会在每个插件行显示“教程 / 官方文档”的学习状态，并在切换中文 / English 面板语言时同步重绘。
+- 未入库或未知插件仍会显示在列表里，但学习状态保持未知，直到后续通过教程或官方文档研究后再入库。
+- 验证：更新并通过 `test/effect-scan.test.js` 与 `test/panel-pending.test.js`。
 
 ### 2026-05-18 - Workflow Source Priority Metadata / workflow 来源优先级元数据
 - Added single-record source metadata to workflow entries: `primarySourceKind`, `supplementSourceKinds`, `mergeRule`, and source notes.

@@ -720,10 +720,10 @@ test('plugin scan status list can select unscanned plugins and scan only those',
       return Promise.resolve({
         ok: true,
         effects: [
-          { name: 'Trapcode Particular', matchName: 'tc Particular', category: 'RG', scanStatus: 'scanned', parameterCount: 88, workflowStatus: 'known', workflowLabel: 'Particle Solid Carrier', workflowLayerStrategy: 'solidCarrier' },
-          { name: 'Deep Glow', matchName: 'Deep Glow', category: 'Glow', scanStatus: 'unscanned', workflowStatus: 'known', workflowLabel: 'Adjustment Layer Effect', workflowLayerStrategy: 'adjustmentLayer' },
-          { name: 'Mystery Particles', matchName: 'Mystery Particles', category: 'Particle', scanStatus: 'unscanned', workflowStatus: 'unknown', workflowLabel: 'Unknown Plugin Workflow', workflowLayerStrategy: 'unknown' },
-          { name: 'Broken FX', matchName: 'Broken FX', category: 'Unstable', scanStatus: 'failed', scanError: 'Unable to add effect.', workflowStatus: 'unknown', workflowLabel: 'Unknown Plugin Workflow', workflowLayerStrategy: 'unknown' }
+          { name: 'Trapcode Particular', matchName: 'tc Particular', category: 'RG', scanStatus: 'scanned', parameterCount: 88, workflowStatus: 'known', workflowLabel: 'Particle Solid Carrier', workflowLayerStrategy: 'solidCarrier', workflowTutorialStatus: 'learned', workflowOfficialDocsStatus: 'learned' },
+          { name: 'Deep Glow', matchName: 'Deep Glow', category: 'Glow', scanStatus: 'unscanned', workflowStatus: 'known', workflowLabel: 'Adjustment Layer Effect', workflowLayerStrategy: 'adjustmentLayer', workflowTutorialStatus: 'learned', workflowOfficialDocsStatus: 'learned' },
+          { name: 'Mystery Particles', matchName: 'Mystery Particles', category: 'Particle', scanStatus: 'unscanned', workflowStatus: 'unknown', workflowLabel: 'Unknown Plugin Workflow', workflowLayerStrategy: 'unknown', workflowTutorialStatus: 'unknown', workflowOfficialDocsStatus: 'unknown' },
+          { name: 'Broken FX', matchName: 'Broken FX', category: 'Unstable', scanStatus: 'failed', scanError: 'Unable to add effect.', workflowStatus: 'unknown', workflowLabel: 'Unknown Plugin Workflow', workflowLayerStrategy: 'unknown', workflowTutorialStatus: 'unknown', workflowOfficialDocsStatus: 'unknown' }
         ],
         summary: { total: 4, scanned: 1, unscanned: 2, failed: 1 }
       });
@@ -761,6 +761,7 @@ test('plugin scan status list can select unscanned plugins and scan only those',
   assert.equal(elements.effectStatusList.children.length, 4);
   assert.match(combinedText(elements.effectStatusList.children[0]), /Scanned/);
   assert.match(combinedText(elements.effectStatusList.children[0]), /Workflow: In Library/);
+  assert.match(combinedText(elements.effectStatusList.children[0]), /Learning: tutorial learned \| docs learned/);
   assert.match(combinedText(elements.effectStatusList.children[1]), /Unscanned/);
   assert.match(combinedText(elements.effectStatusList.children[3]), /Failed/);
   assert.match(combinedText(elements.effectStatusList.children[2]), /Workflow: Not In Library/);
@@ -771,12 +772,18 @@ test('plugin scan status list can select unscanned plugins and scan only those',
   assert.equal(elements.effectStatusList.children.length, 2);
   assert.match(combinedText(elements.effectStatusList.children[0]), /Trapcode Particular/);
   assert.match(combinedText(elements.effectStatusList.children[1]), /Deep Glow/);
+  elements.languageSelect.value = 'zh';
+  elements.languageSelect.listeners.change.call(elements.languageSelect);
+  assert.match(combinedText(elements.effectStatusList.children[0]), /学习状态：教程 已学习｜官方文档 已学习/);
 
+  elements.languageSelect.value = 'en';
+  elements.languageSelect.listeners.change.call(elements.languageSelect);
   elements.effectScanFilter.value = 'workflow-unknown';
   elements.effectScanFilter.listeners.change();
   assert.equal(elements.effectStatusList.children.length, 2);
   assert.match(combinedText(elements.effectStatusList.children[0]), /Mystery Particles/);
   assert.match(combinedText(elements.effectStatusList.children[1]), /Broken FX/);
+  assert.match(combinedText(elements.effectStatusList.children[0]), /Learning: tutorial unknown \| docs unknown/);
 
   elements.effectScanFilter.value = 'workflow-known';
   elements.effectScanFilter.listeners.change();
@@ -1054,6 +1061,10 @@ function createI18n(initialLanguage = 'en') {
           effectStatusDetailFailed: '上次扫描失败: {error}',
           effectWorkflowKnown: 'Workflow: 已入库',
           effectWorkflowUnknown: 'Workflow: 未入库',
+          effectLearningCoverage: '学习状态：教程 {tutorial}｜官方文档 {docs}',
+          effectLearningLearned: '已学习',
+          effectLearningMissing: '未学习',
+          effectLearningUnknown: '未知',
           effectStatusSummary: '插件名单: 共 {total} 个，已扫描 {scanned} 个，未扫描 {unscanned} 个，失败 {failed} 个。',
           effectScanProgress: '本次勾选 {selected} 个，已扫描 {scanned} 个，失败 {failed} 个。',
           effectStatusNotLoaded: '尚未加载插件扫描名单。',
@@ -1097,6 +1108,10 @@ function createI18n(initialLanguage = 'en') {
           effectStatusDetailFailed: 'Last scan failed: {error}',
           effectWorkflowKnown: 'Workflow: In Library',
           effectWorkflowUnknown: 'Workflow: Not In Library',
+          effectLearningCoverage: 'Learning: tutorial {tutorial} | docs {docs}',
+          effectLearningLearned: 'learned',
+          effectLearningMissing: 'not learned',
+          effectLearningUnknown: 'unknown',
           effectStatusSummary: 'Plugin list: {total} total, {scanned} scanned, {unscanned} unscanned, {failed} failed.',
           effectScanProgress: 'Selected {selected} plugins, scanned {scanned}, failed {failed}.',
           effectStatusNotLoaded: 'Plugin scan list not loaded.',

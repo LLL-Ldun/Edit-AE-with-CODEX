@@ -62,6 +62,8 @@ When AE context or plugin parameters are scanned, AEcreate emits workflow metada
 - Helper layers are created only when tracking, source protection, different masks/blend scopes, a real plugin workflow, or explicit user control requires them.
 - Unknown plugins or visual goals are preserved as unknown/incomplete until official docs, official tutorials, or high-quality tutorials are reviewed and promoted into the library.
 
+Each workflow entry now also carries `learningCoverage` metadata with `tutorialStatus` and `officialDocsStatus`. Built-in workflows that were derived from the tutorial set report learned coverage for both sources, while unknown plugin workflows keep both statuses as unknown until they are researched. The Plugin Params scan list reads these fields directly so users can see which plugins still need tutorial or official-doc review.
+
 ### Current Built-In Families
 
 The first built-in set covers particle carriers, adjustment impact stacks, source retime, Saber path glow, Optical Flares hits, ripple dissolves, depth-map preprocessing, key/matte preprocessing, path strokes, and unknown-plugin research.

@@ -153,6 +153,10 @@ body {
   line-height: 1.35;
 }
 
+.effect-status-detail + .effect-status-detail {
+  margin-top: 2px;
+}
+
 .effect-status-badge {
   border: 1px solid #4a4a4a;
   border-radius: 4px;

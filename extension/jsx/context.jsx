@@ -480,11 +480,36 @@ AECreateContext.workflowSourcePolicy = function (primarySourceKind, supplementSo
 };
 
 AECreateContext.workflowEntriesWithSourcePolicy = function (entries, sourcePolicyFactory) {
+  return AECreateContext.workflowEntriesWithMetadata(entries, sourcePolicyFactory, null);
+};
+
+AECreateContext.workflowLearningCoverage = function (tutorialStatus, officialDocsStatus, options) {
+  options = options || {};
+  return {
+    schemaVersion: 1,
+    tutorialStatus: tutorialStatus || 'unknown',
+    officialDocsStatus: officialDocsStatus || 'unknown',
+    notes: options.notes || []
+  };
+};
+
+AECreateContext.learnedWorkflowCoverage = function (options) {
+  return AECreateContext.workflowLearningCoverage('learned', 'learned', options);
+};
+
+AECreateContext.researchNeededWorkflowCoverage = function (options) {
+  return AECreateContext.workflowLearningCoverage('unknown', 'unknown', options);
+};
+
+AECreateContext.workflowEntriesWithMetadata = function (entries, sourcePolicyFactory, coverageFactory) {
   var output = [];
   for (var i = 0; i < entries.length; i++) {
     var entry = entries[i];
     if (!entry.sourcePolicy) {
       entry.sourcePolicy = typeof sourcePolicyFactory === 'function' ? sourcePolicyFactory(entry, i) : sourcePolicyFactory;
+    }
+    if (!entry.learningCoverage && typeof coverageFactory === 'function') {
+      entry.learningCoverage = coverageFactory(entry, i);
     }
     output.push(entry);
   }
@@ -849,9 +874,15 @@ AECreateContext.effectWorkflowLibrary = function () {
       preferredSources: ['official vendor documentation', 'official tutorials', 'high-quality workflow tutorials']
     }
   }];
-  return AECreateContext.workflowEntriesWithSourcePolicy(entries, function () {
-    return AECreateContext.officialWorkflowSourcePolicy();
-  });
+  return AECreateContext.workflowEntriesWithMetadata(
+    entries,
+    function () {
+      return AECreateContext.officialWorkflowSourcePolicy();
+    },
+    function () {
+      return AECreateContext.learnedWorkflowCoverage();
+    }
+  );
 };
 
 AECreateContext.visualWorkflowLibrary = function () {
@@ -1323,9 +1354,15 @@ AECreateContext.visualWorkflowLibrary = function () {
     recommendedActionTypes: ['addAdjustmentLayer', 'applyPreset', 'addEffect', 'setProperty', 'setKeyframes', 'setLayerProperties'],
     onlineResearch: optionalResearch()
   }];
-  return AECreateContext.workflowEntriesWithSourcePolicy(entries, function () {
-    return AECreateContext.tutorialWorkflowSourcePolicy();
-  });
+  return AECreateContext.workflowEntriesWithMetadata(
+    entries,
+    function () {
+      return AECreateContext.tutorialWorkflowSourcePolicy();
+    },
+    function () {
+      return AECreateContext.learnedWorkflowCoverage();
+    }
+  );
 };
 
 AECreateContext.workflowSearchText = function (effectInfo) {
@@ -1367,6 +1404,7 @@ AECreateContext.unknownPluginWorkflow = function (effectInfo) {
     id: 'unknown-plugin-workflow',
     label: 'Unknown Plugin Workflow',
     sourcePolicy: AECreateContext.researchNeededWorkflowSourcePolicy(),
+    learningCoverage: AECreateContext.researchNeededWorkflowCoverage(),
     confidence: 'low',
     matchedBy: [],
     layerStrategy: 'unknown',
@@ -1586,12 +1624,20 @@ AECreateContext.effectScanIndexFile = function () {
 };
 
 AECreateContext.effectScanMetadataFromScan = function (scan, outputPath) {
+  var workflow = scan.workflow || {};
+  var learningCoverage = workflow.learningCoverage || scan.workflowLearningCoverage || AECreateContext.workflowLearningCoverage(
+    scan.workflowTutorialStatus,
+    scan.workflowOfficialDocsStatus
+  );
   return {
     scannedAt: scan.scannedAt || '',
     outputPath: outputPath || scan.outputPath || '',
     parameterCount: scan.parameterCount || 0,
     truncated: scan.truncated === true,
-    effect: scan.effect || {}
+    effect: scan.effect || {},
+    workflow: workflow,
+    workflowTutorialStatus: learningCoverage.tutorialStatus || 'unknown',
+    workflowOfficialDocsStatus: learningCoverage.officialDocsStatus || 'unknown'
   };
 };
 
@@ -1722,6 +1768,9 @@ AECreateContext.effectScanStatusRecords = function (effects, scans, failures) {
     record.workflowId = workflow.id;
     record.workflowLabel = workflow.label;
     record.workflowLayerStrategy = workflow.layerStrategy;
+    record.workflowLearningCoverage = workflow.learningCoverage || AECreateContext.researchNeededWorkflowCoverage();
+    record.workflowTutorialStatus = record.workflowLearningCoverage.tutorialStatus || 'unknown';
+    record.workflowOfficialDocsStatus = record.workflowLearningCoverage.officialDocsStatus || 'unknown';
     for (var scanIndex = 0; scanIndex < scanList.length; scanIndex++) {
       if (!AECreateContext.effectScanMatchesEffect(scanList[scanIndex], effect)) continue;
       record.scanStatus = 'scanned';
@@ -1864,11 +1913,14 @@ AECreateContext.scanEffectParametersData = function (effectInfo, options) {
     layer = null;
     app.endUndoGroup();
     undoOpen = false;
+    var workflow = AECreateContext.pluginWorkflow(effectInfo);
     return {
       schemaVersion: 1,
       scannedAt: new Date().toString(),
       effect: effectInfo,
-      workflow: AECreateContext.pluginWorkflow(effectInfo),
+      workflow: workflow,
+      workflowTutorialStatus: workflow.learningCoverage ? workflow.learningCoverage.tutorialStatus : 'unknown',
+      workflowOfficialDocsStatus: workflow.learningCoverage ? workflow.learningCoverage.officialDocsStatus : 'unknown',
       pluginFiles: AECreateContext.pluginFileCandidates(effectInfo, scanOptions),
       params: params,
       parameterCount: scanOptions.count,

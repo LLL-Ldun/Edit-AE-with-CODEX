@@ -27,6 +27,7 @@
 - [ ] Click `Refresh List` / `刷新名单` and confirm installed plugins are listed with Scanned / Unscanned / Failed status.
 - [ ] After at least one new plugin scan, confirm `<bridge-folder>/effect-scan-index.json` exists; click `Refresh List` again and confirm the list refresh does not stall while parsing large `effect-params/*.json` files.
 - [ ] Confirm each plugin row also shows whether its plugin workflow is already in the built-in workflow library.
+- [ ] Confirm each plugin row also shows Tutorial / Docs learning coverage, and that the labels update correctly when switching the panel language.
 - [ ] Use the plugin status filter to show only unscanned plugins, then confirm the list updates without scanning anything.
 - [ ] Use the plugin status filter to show only `已入库` / `In Workflow Library` plugins and only `未入库` / `Not In Workflow Library` plugins, then confirm the list updates without scanning anything.
 - [ ] With the filter set to `已入库` / `In Workflow Library`, click `Select Unscanned` / `勾选未扫描`, then confirm only visible plugins that are both in-library and unscanned become checked.

@@ -422,6 +422,7 @@
     else setEmptyText('pendingSummary', 'noPendingAction');
     renderPresetPaths(state.presetPaths || []);
     renderPendingArchive(state.pendingArchive, state.currentArchiveId);
+    if (state.effectScanStatusLoaded) renderEffectStatusList();
   }
 
   function renderPending(plan) {
@@ -690,6 +691,18 @@
     return effect.workflowStatus === 'known' ? text('effectWorkflowKnown') : text('effectWorkflowUnknown');
   }
 
+  function effectLearningStatusLabel(status) {
+    if (status === 'learned') return text('effectLearningLearned');
+    if (status === 'missing') return text('effectLearningMissing');
+    return text('effectLearningUnknown');
+  }
+
+  function effectLearningCoverageLabel(effect) {
+    return text('effectLearningCoverage')
+      .replace('{tutorial}', effectLearningStatusLabel(effect.workflowTutorialStatus))
+      .replace('{docs}', effectLearningStatusLabel(effect.workflowOfficialDocsStatus));
+  }
+
   function effectStatusFilterMatches(effect) {
     var filter = requireElement('effectScanFilter').value || 'all';
     if (filter === 'workflow-known') return effect.workflowStatus === 'known';
@@ -752,6 +765,10 @@
         detail.textContent += ' - ' + effect.workflowLabel;
       }
 
+      var learning = document.createElement('span');
+      learning.className = 'effect-status-detail';
+      learning.textContent = ' ' + effectLearningCoverageLabel(effect);
+
       var badge = document.createElement('span');
       badge.className = 'effect-status-badge ' + (effect.scanStatus || 'unscanned');
       badge.textContent = effectScanStatusLabel(effect.scanStatus);
@@ -759,6 +776,7 @@
       body.appendChild(title);
       body.appendChild(meta);
       body.appendChild(detail);
+      body.appendChild(learning);
       item.appendChild(checkbox);
       item.appendChild(body);
       item.appendChild(badge);

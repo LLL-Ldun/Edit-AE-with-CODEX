@@ -104,8 +104,25 @@ test('effectScanStatusRecords shows whether plugins have a built-in workflow ent
   assert.equal(records[0].workflowStatus, 'known');
   assert.equal(records[0].workflowId, 'particle-solid-carrier');
   assert.equal(records[0].workflowLayerStrategy, 'solidCarrier');
+  assert.equal(records[0].workflowTutorialStatus, 'learned');
+  assert.equal(records[0].workflowOfficialDocsStatus, 'learned');
   assert.equal(records[1].workflowStatus, 'unknown');
   assert.equal(records[1].workflowId, 'unknown-plugin-workflow');
+  assert.equal(records[1].workflowTutorialStatus, 'unknown');
+  assert.equal(records[1].workflowOfficialDocsStatus, 'unknown');
+});
+
+test('effect workflow catalog preserves workflow learning coverage metadata', () => {
+  const helpers = loadContextHelpers();
+  const catalog = helpers.effectWorkflowCatalog([
+    { name: 'Trapcode Particular', matchName: 'tc Particular', category: 'RG Particles and 3D' },
+    { name: 'Mystery Render FX', matchName: 'Mystery Render FX', category: 'Unknown Vendor' }
+  ]);
+
+  assert.equal(catalog.effects[0].workflow.learningCoverage.tutorialStatus, 'learned');
+  assert.equal(catalog.effects[0].workflow.learningCoverage.officialDocsStatus, 'learned');
+  assert.equal(catalog.effects[1].workflow.learningCoverage.tutorialStatus, 'unknown');
+  assert.equal(catalog.effects[1].workflow.learningCoverage.officialDocsStatus, 'unknown');
 });
 
 test('selectedEffectsFromPayload resolves only checked plugins from the installed list', () => {
@@ -610,6 +627,10 @@ test('scanEffectParametersData includes inferred plugin workflow', () => {
   assert.equal(scan.workflow.layerStrategy, 'adjustmentLayer');
   assert.ok(scan.workflow.recommendedActionTypes.includes('addAdjustmentLayer'));
   assert.equal(scan.workflow.sourcePolicy.primarySourceKind, 'official');
+  assert.equal(scan.workflow.learningCoverage.tutorialStatus, 'learned');
+  assert.equal(scan.workflow.learningCoverage.officialDocsStatus, 'learned');
+  assert.equal(scan.workflowTutorialStatus, 'learned');
+  assert.equal(scan.workflowOfficialDocsStatus, 'learned');
 });
 
 test('findEffectInfo matches installed effects by display name or match name', () => {
